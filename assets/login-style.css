@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
+body{
+    background-color: #2A0054;
+    font-family: "Noto Serif", serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+.container-fluid{
+    display: flex;
+    align-items: center;
+}
+.card{
+    width: 992px;
+    height: 80vh;
+    margin: auto;
+    border: none;
+    border-radius: 10px;
+}
+.card-left{
+    background-color: #5F369F;
+    height: 80vh;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+.card-left .left-inner{
+    margin-top: 10vh;
+}
+.card-right{
+    height: 80vh;
+    display: flex;
+    align-items: center;
+}
+.card-right button{
+    background-color: #5F369F;
+    color: white;
+    padding: 0px;
+}
+.card-right button .span1{
+    background-color: white;
+    color: #5F369F;
+    float: left;
+    padding: 8px;
+    aspect-ratio: 1;
+}
+.card-right button .span2{
+    padding: 8px;
+}
+.footer{
+    bottom: -19vh;
+    right: 0vw;
+}
+@media screen and (max-width: 576px){
+    .footer{
+        bottom: -23vh;
+    }
+}

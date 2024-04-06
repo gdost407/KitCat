@@ -1,0 +1,189 @@
+/* aniket s golhar | custom Kitcat chat theme | March 2024 */
+/* ======================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
+body{
+    background-image: url('KitCat-bg.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    box-shadow: inset 0 0 0 100vh rgb(217 199 251 / 70%);
+    font-family: "Noto Serif", serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+.user-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    transition: 0.2s;
+    cursor: pointer;
+    /* border-radius: 5rem; */
+    border-left: 5px solid #FFFFFF;
+}
+.user-item:hover{
+    background-color: #9352E033;
+    border-left: 5px solid #F169BB;
+}  
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 10px;
+    object-fit: cover;
+}    
+.user-details {
+    flex: 1;
+    /* border-bottom: 1px solid #9352E0; */
+    overflow: hidden;
+}   
+.user-name {
+    font-weight: bold;
+    transition: 0.5s;
+}    
+.last-msg {
+    color: #6c757d;
+    transition: 0.5s;
+    display: inline-block;
+    white-space: nowrap;
+}
+#section-chat{
+    background-image: url('KitCat-bg.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    box-shadow: inset 0 0 0 100vh #FFFFFFDD;
+    border-left: 1px solid #5F369F;
+    border-right: 1px solid #5F369F;
+}
+#chat-content{
+    height: 81vh;
+    overflow-y: auto;
+}
+#chat-content .left-message{
+    display: flex;
+    align-items: end;
+    padding-bottom: 5px;
+    padding-right: 4rem;
+}
+#chat-content .left-message .chat-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-right: 5px;
+    object-fit: cover;
+}
+#chat-content .left-message .chat-message {
+    border: 2px solid #F169BB;
+    background-color: #F169BB11;
+    border-radius: 10px;
+    border-bottom-left-radius: 0px;
+    padding: 10px;
+}
+#chat-content .left-message .chat-message span{
+    color: #5F369F;
+    font-size: 10px;
+    padding-top: 7px;
+    float: inline-end;
+}
+#chat-content .right-message{
+    display: flex;
+    align-items: end;
+    padding-bottom: 5px;
+    float: right;
+    padding-left: 4rem;
+}
+#chat-content .right-message .chat-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-left: 5px;
+    object-fit: cover;
+} 
+#chat-content .right-message .chat-message {
+    border: 2px solid #5F369F;
+    background-color: #9352E033;
+    border-radius: 10px;
+    border-bottom-right-radius: 0px;
+    padding: 10px;
+    /* color: #D9C7FB; */
+    /* max-width: 75%; */
+}
+#chat-content .right-message .chat-message span{
+    color: #F169BB;
+    font-size: 10px;
+    padding-top: 7px;
+    float: inline-end;
+}
+#image-gallary{
+    overflow-y: auto;
+    height: 49vh;
+}
+#image-gallary img{
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border: 2px solid #5F369F;
+    border-radius: 10px;
+}
+emoji-picker{
+    position: absolute;
+    bottom: 6.5vh;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 370px;
+    display: none;
+}
+
+/* media query */
+@media screen and (max-width: 992px){
+    #section-profile{
+        display: none;
+    }
+}
+@media screen and (max-width: 767px){
+    
+}
+@media screen and (max-width: 576px){
+    #section-chat, #section-profile{
+        display: none;
+    }
+    #chat-content{
+        height: 85vh;
+    }
+    #image-gallary{
+        height: 55vh;
+    }
+}
+
+/* scroll bar css */
+::-webkit-scrollbar {
+    width: 5px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #ad80e4;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #9352E0;
+}
+
+/* bootstrap class modify */
+.btn-primary{
+    background-color: #5F369F !important;
+    border-color: #5F369F !important;
+}
+.btn-primary:hover{
+    background-color: #60339C !important;
+    border-color: #60339C !important;
+}
+.form-control{
+    border-color: #60339C;
+}
+.form-control:focus{
+    box-shadow: 0 0 0 0.25rem #60339C22;
+}

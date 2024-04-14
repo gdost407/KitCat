@@ -51,7 +51,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, setPersistence, inMemoryPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
         import { firebaseConfig } from './assets/config.js';
 
 
@@ -73,35 +73,56 @@
                 const token = credential.accessToken;
                 const user = result.user;
 
-                // Store user details locally
-                localStorage.setItem('user', JSON.stringify(user));
-
                 // Save user data to Firestore
                 const currentTime = new Date().getTime();
                 const randomNumber = Math.floor(Math.random() * 10000);
                 const timestamp = currentTime.toString() + randomNumber.toString();
-                await setDoc(doc(db, "users", user.uid), {
-                    displayName: user.displayName,
-                    email: user.email,
-                    emailVerified: user.emailVerified,
-                    phoneNumber: user.phoneNumber,
-                    photoURL: user.photoURL,
-                    uid: user.uid,
-                    // Include relevant metadata fields
-                    metadata: {
-                        creationTime:  user.metadata.creationTime,
-                        lastSignInTime: user.metadata.lastSignInTime
-                    }
-                });
-                await setDoc(doc(db, "chatbook", user.uid), {
-                    message:'Account Created',
-                    seen:'seen',
-                    status:'online',
-                    time:new Date(),
-                    users:[user.uid]
-                });
-                console.log("User data saved to Firestore successfully!");
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
 
+                if (docSnap.exists()) {
+                    // Store user details locally
+                    localStorage.setItem('user', JSON.stringify(docSnap.data()));
+
+                    // Document exists, update data
+                    await updateDoc(docRef, {
+                        email: user.email,
+                        emailVerified: user.emailVerified,
+                        metadata: {
+                            creationTime: user.metadata.creationTime,
+                            lastSignInTime: user.metadata.lastSignInTime
+                        }
+                    });
+                    console.log("Document updated successfully");
+                } else {
+                    // Store user details locally
+                    localStorage.setItem('user', JSON.stringify(user));
+
+                    // Document doesn't exist, add new data
+                    await setDoc(docRef, {
+                        displayName: user.displayName,
+                        email: user.email,
+                        emailVerified: user.emailVerified,
+                        phoneNumber: user.phoneNumber,
+                        photoURL: user.photoURL,
+                        uid: user.uid,
+                        // Include relevant metadata fields
+                        metadata: {
+                            creationTime: user.metadata.creationTime,
+                            lastSignInTime: user.metadata.lastSignInTime
+                        }
+                    });
+                    await setDoc(doc(db, "chatbook", user.uid), {
+                        message:'Account Created',
+                        seen:'seen',
+                        status:'online',
+                        notifyTo:user.uid,
+                        request:'Accepted',
+                        time:new Date(),
+                        users:[user.uid]
+                    });
+                    console.log("New document added successfully");
+                }
 
                 window.location.href = 'Chat.php';
             } catch (error) {
@@ -116,9 +137,15 @@
         }
 
         let locationChanged = false;
-        const authStateChangedListener = (user) => {
+        const authStateChangedListener = async (user) => {
             if(!locationChanged){
                 if (user) {
+                    const docRef = doc(db, "users", user.uid);
+                    const docSnap = await getDoc(docRef); // Ensure to await here
+
+                    if (docSnap.exists()) {
+                        localStorage.setItem('user', JSON.stringify(docSnap.data()));
+                    }
                     console.log("User is signed in:", user); // Set the flag to true to indicate that location change has been executed
                     window.location = "Chat.php";
                 } else if (!user) {

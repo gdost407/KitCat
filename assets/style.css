@@ -1,5 +1,5 @@
-/* aniket s golhar | custom Kitcat chat theme | March 2024 */
-/* ======================================================= */
+/* aniket s golhar | custom Kitcat chat theme | March 2024
+======================================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
 body{
@@ -13,6 +13,9 @@ body{
     font-weight: 400;
     font-style: normal;
 }
+#section-list1, #section-list2, #section-list3{
+    display: none;
+}
 .user-item {
     display: flex;
     align-items: center;
@@ -25,7 +28,11 @@ body{
 .user-item:hover{
     background-color: #9352E033;
     border-left: 5px solid #F169BB;
-}  
+}
+.user-active{
+    background-color: #9352E033;
+    border-left: 5px solid #F169BB;
+}
 .user-avatar {
     width: 50px;
     height: 50px;
@@ -48,6 +55,24 @@ body{
     display: inline-block;
     white-space: nowrap;
 }
+.Online{
+    width: 10px;
+    height: 10px;
+    background: #5F369F;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: -8px;
+}
+.Offline{
+    width: 10px;
+    height: 10px;
+    background: red;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: -8px;
+}
 #section-chat{
     background-image: url('KitCat-bg.jpg');
     background-size: cover;
@@ -66,6 +91,7 @@ body{
     align-items: end;
     padding-bottom: 5px;
     padding-right: 4rem;
+    width: 100%;
 }
 #chat-content .left-message .chat-avatar {
     width: 30px;
@@ -116,6 +142,9 @@ body{
     padding-top: 7px;
     float: inline-end;
 }
+#image-upload-progress-bar, #profile-upload-progress-bar{
+    display: none;
+}
 #image-gallary{
     overflow-y: auto;
     height: 49vh;
@@ -136,18 +165,20 @@ emoji-picker{
     height: 370px;
     display: none;
 }
-
+#section-chat, #section-profile{
+    display: none;
+}
 /* media query */
 @media screen and (max-width: 992px){
-    #section-profile{
+    /* #section-profile{
         display: none;
-    }
+    } */
 }
 @media screen and (max-width: 767px){
     
 }
 @media screen and (max-width: 576px){
-    #section-chat, #section-profile{
+    #section-start, #section-chat, #section-profile{
         display: none;
     }
     #chat-content{

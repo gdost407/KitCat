@@ -243,7 +243,7 @@
                 <img src="assets/Laptop-Chat-Image.png" alt="" class="mt-5" style="filter: hue-rotate(67deg) drop-shadow(2px 4px 6px black); max-width: 400px; width: 100%;">
                 <h1 style="color: #5F369F;">KitCat</h1>
                 <h3 style="color: #F169BB;">Get experience as lively as a Tom & Jerry brawl</h3>
-                <h6>Designed & Developed by ASG</h6>
+                <h6>Designed & Developed by <a href="https://aniketgolhar.in">ASG</a></h6>
             </div>
             <!-- chat body -->
             <div class="col-12 col-sm-6 col-lg-5 bg-light p-0 position-relative" style="height: 100vh;" id="section-chat">

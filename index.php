@@ -4,21 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KitCat</title>
-    <!-- title icon -->
+    <meta name="description" content="KitCat is an engaging chat platform designed by Aniket Golhar. Experience lively, fun-filled conversations and make new friends—just as exciting as a Tom & Jerry brawl. Log in to join the fun!">
+    <meta name="keywords" content="KitCat, Aniket Golhar, chatting platform, chat with friends, make friends, online chat, social platform, instant messaging, fun chat app">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Aniket Golhar">
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="KitCat - Aniket Golhar's Fun Platform">
+    <meta property="og:description" content="KitCat is an engaging chat platform designed by Aniket Golhar. Experience lively, fun-filled conversations and make new friends—just as exciting as a Tom & Jerry brawl. Log in to join the fun!">
+    <meta property="og:image" content="https://kitcat.aniketgolhar.in/assets/KitCat-Logo.jpg">
+    <meta property="og:url" content="https://kitcat.aniketgolhar.in">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="KitCat - Aniket Golhar's Fun Platform">
+    <meta name="twitter:description" content="KitCat is an engaging chat platform designed by Aniket Golhar. Experience lively, fun-filled conversations and make new friends—just as exciting as a Tom & Jerry brawl. Log in to join the fun!">
+    <meta name="twitter:image" content="https://kitcat.aniketgolhar.in/assets/KitCat-Logo.jpg">
+    <meta name="twitter:url" content="https://kitcat.aniketgolhar.in">
+
+    <!-- Title Icon -->
     <link rel="icon" href="assets/KitCat-Logo.jpg" type="image/x-icon">
     <link rel="shortcut icon" href="assets/KitCat-Logo.jpg" type="image/x-icon">
-    <!-- bootstrap css cdn -->
+
+    <!-- Bootstrap CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- fontawsome css cdn -->
+
+    <!-- FontAwesome CSS CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- bootstrap js cdn-->
+
+    <!-- Bootstrap JS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- google jquery cdn -->
+
+    <!-- Google jQuery CDN -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <!-- custom css -->
+
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/login-style.css">
-    
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://kitcat.aniketgolhar.in">
 </head>
+
 <body>
     <div class="container-fluid" style="height: 100vh;">
         <div class="card">

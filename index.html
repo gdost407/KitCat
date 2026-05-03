@@ -3276,7 +3276,7 @@
       await pc.setLocalDescription(offer);
 
       // 🔥 SAVE OFFER
-      await updateDoc(callDoc, {
+      await setDoc(callDoc, {
         offer: {
           type: offer.type,
           sdp: offer.sdp

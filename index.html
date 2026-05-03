@@ -1184,7 +1184,7 @@
             <!-- App version -->
             <div class="settings-version">
               <span>🐱 KitCat</span>
-              <span>v6.0.1 · Made with ♥ by ASG</span>
+              <span>v6.0.2 · Made with ♥ by ASG</span>
             </div>
  
           </div><!-- .settings-body -->
@@ -1277,7 +1277,7 @@
     <div class="notif-inner">
       <div class="notif-avatar">R</div>
       <div class="notif-text">
-        <div class="notif-name">Riya Sharma</div>
+        <div class="notif-name">Kit Cat</div>
         <div class="notif-sub" id="notifSubText">📞 Incoming audio call…</div>
       </div>
     </div>
@@ -1309,7 +1309,7 @@
     </div>
 
     <div class="caller-info" style="margin-top:24px">
-      <div class="caller-name">Riya Sharma</div>
+      <div class="caller-name">Kit Cat</div>
       <div class="caller-status">KitCat Audio Call</div>
     </div>
 
@@ -1351,7 +1351,7 @@
     </div>
 
     <div class="caller-info" style="margin-top:24px">
-      <div class="caller-name">Riya Sharma</div>
+      <div class="caller-name">Kit Cat</div>
       <div class="caller-status">Wants to video call you</div>
     </div>
 
@@ -1396,7 +1396,7 @@
     </div>
 
     <div class="caller-info" style="margin-top:24px">
-      <div class="caller-name">Riya Sharma</div>
+      <div class="caller-name">Kit Cat</div>
       <div class="caller-status" id="dialStatus">Calling<span class="dots">...</span></div>
     </div>
 
@@ -1421,7 +1421,7 @@
     </div>
 
     <div class="caller-info" style="margin-top:20px">
-      <div class="caller-name">Riya Sharma</div>
+      <div class="caller-name">Kit Cat</div>
       <div class="caller-status">Active Call</div>
       <div class="call-timer" id="audioTimer">00:00</div>
     </div>
@@ -3172,361 +3172,160 @@
     // ======================================================
     // START CALL
     // ======================================================
-    window.startCall = async function(type){
+    window.startCall = async function(type = "audio") {
 
       const sessionId = ++callSessionId;
       endingCall = false;
 
-      try{
+      if(!APP.activeChatId || !APP.currentChatUser) return;
 
-        if(!APP.activeChatId || !APP.currentChatUser) return;
+      const callerId = getCurrentUid();
+      clearCallListeners();
+      pendingRemoteCandidates = [];
+      callType = type;
+      const friend = APP.currentChatUser;
+      const receiverId = friend.otherUserId;
 
-        const callerId = getCurrentUid();
-        clearCallListeners();
-        pendingRemoteCandidates = [];
-        callType = type;
-        const friend = APP.currentChatUser;
-        const receiverId = friend.otherUserId;
-
-        if(!callerId || !receiverId){
-          showToast("Unable to start call. Please reopen this chat.", "KitCat Call", "assets/KitCat-Logo.jpg", { force:true });
-          return;
-        }
-
-        updateCallUI(friend, type);
-
-        showScreen("dialing");
-        playDialTone();
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio:true,
-          video:type === "video"
-        });
-
-        if(sessionId !== callSessionId || endingCall){
-          stopStream(stream);
-          return;
-        }
-
-        localStream = stream;
-        await attachLocalPreview(localStream, type);
-
-        if(type === "video"){
-          showScreen("active-video");
-        }
-
-        pc = new RTCPeerConnection(rtcConfig);
-
-        remoteStream = new MediaStream();
-
-        await attachRemotePlayback(remoteStream, type);
-
-        const activeStream = localStream;
-        if(!activeStream || sessionId !== callSessionId || endingCall) return;
-
-        activeStream.getTracks().forEach(track=>{
-          pc.addTrack(track, activeStream);
-        });
-
-        pc.ontrack = (event)=>{
-          const stream = event.streams?.[0];
-          if(!stream) return;
-          stream.getTracks().forEach(track=>{
-            remoteStream.addTrack(track);
-          });
-          attachRemotePlayback(remoteStream, type);
-        };
-
-        const callRef = await addDoc(collection(FB.db,"calls"),{
-          callerId: callerId,
-          receiverId: receiverId,
-          type:type,
-          status:"creating",
-          createdAt: serverTimestamp()
-        });
-
-        if(sessionId !== callSessionId || endingCall){
-          await updateDoc(callRef,{ status:"ended" }).catch(()=>{});
-          return;
-        }
-
-        currentCallId = callRef.id;
-
-        pc.onicecandidate = async(event)=>{
-          if(event.candidate && currentCallId){
-            await addDoc(
-              collection(FB.db,"calls",currentCallId,"callerCandidates"),
-              event.candidate.toJSON()
-            );
-          }
-        };
-
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-
-        if(sessionId !== callSessionId || endingCall) return;
-
-        await updateDoc(doc(FB.db,"calls",currentCallId),{
-          offer: JSON.stringify(offer),
-          status: "ringing"
-        });
-
-        rememberCallUnsub(onSnapshot(doc(FB.db,"calls",currentCallId), async(docSnap)=>{
-
-          if(!docSnap.exists()) return;
-
-          const data = docSnap.data();
-
-          if(data.status === "rejected"){
-            stopSounds();
-            endCall();
-            return;
-          }
-
-          if(data.status === "busy"){
-            stopSounds();
-            showToast("User is busy", "KitCat Call", "assets/KitCat-Logo.jpg", { force:true });
-            endCall();
-            return;
-          }
-
-          if(data.answer && pc && !pc.currentRemoteDescription){
-            const answer = JSON.parse(data.answer);
-
-            await pc.setRemoteDescription(
-              new RTCSessionDescription(answer)
-            );
-            await flushRemoteCandidates();
-
-            if(type === "video"){
-              showScreen("active-video");
-            }else{
-              showScreen("active");
-            }
-
-            stopSounds();
-            startCallTimer();
-          }
-
-          if(data.status === "ended"){
-            endCall();
-          }
-
-        }));
-
-        rememberCallUnsub(onSnapshot(
-          collection(FB.db,"calls",currentCallId,"receiverCandidates"),
-          (snapshot)=>{
-            snapshot.docChanges().forEach((change)=>{
-              if(change.type === "added"){
-                addRemoteCandidate(change.doc.data());
-              }
-            });
-          }
-        ));
-
-      }catch(err){
-        console.error(err);
-        endCall();
+      if(!callerId || !receiverId){
+        showToast("Unable to start call. Please reopen this chat.", "KitCat Call", "assets/KitCat-Logo.jpg", { force:true });
+        return;
       }
+
+      const receiverUid = friend.otherUserId;
+
+      try {
+      const callData = {
+        callerId: APP.user.uid,
+        receiverId: receiverUid,
+        type: type, // "audio" or "video"
+        status: "ringing",
+        createdAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(FB.db, "calls"), callData);
+
+      const callId = docRef.id;
+
+      console.log("Call started:", callId);
+      showScreen("dialing");
+      playDialTone();
+
+      onSnapshot(doc(FB.db, "calls", callId), (docSnap) => {
+
+        const data = docSnap.data();
+        if (!data) return;
+
+        console.log("Call update:", data.status);
+
+        // ✅ when accepted
+        if (data.status === "accepted") {
+
+          stopSounds();              // dial tone stop
+          showScreen("active");      // switch to call screen
+
+        }
+
+        // ❌ if rejected / ended
+        if (data.status === "rejected" || data.status === "ended") {
+
+          stopSounds();
+          showScreen("chat");
+
+          window.CURRENT_CALL = null;
+        }
+
+      });
+
+      document.querySelectorAll('.caller-name').forEach(el=>{
+        el.textContent = APP.currentChatUser.name || "Kit Cat";
+      });
+      // store current call (use later in next steps)
+      window.CURRENT_CALL = {
+        callId,
+        ...callData
+      };
+
+      return callId;
+
+
+      } catch (err) {
+      console.error("Start call error:", err);
+      }
+
     };
+
+
 
     // ======================================================
     // ACCEPT CALL
     // ======================================================
-    window.acceptCall = async function(){
-      const sessionId = ++callSessionId;
-      endingCall = false;
-
-      try{
-
-        // ================================
-        // 0. VALIDATION
-        // ================================
-        if(!incomingCallData || !incomingCallData.id){
-          console.warn("No incoming call data");
-          return;
-        }
-
-        const callId = incomingCallData.id;
-        const data   = incomingCallData.data;
-        const receiverId = getCurrentUid();
-
-        clearCallListeners();
-        pendingRemoteCandidates = [];
-        currentCallId = callId;
-        callType = data.type;
-
-        // ================================
-        // 1. UPDATE UI
-        // ================================
-        const caller =
-          friendMap?.get(data.callerId) ||
-          { name: "Caller", photo: "" };
-
-        updateCallUI(caller, data.type);
-
-        showScreen(data.type === "video" ? "active-video" : "active");
-        stopSounds();
-
-        // ================================
-        // 2. GET USER MEDIA
-        // ================================
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-          video: data.type === "video"
-        });
-
-        if(sessionId !== callSessionId || endingCall){
-          stopStream(stream);
-          return;
-        }
-
-        localStream = stream;
-        await attachLocalPreview(localStream, data.type);
-
-        // ================================
-        // 3. CREATE PEER CONNECTION
-        // ================================
-        pc = new RTCPeerConnection(rtcConfig);
-
-        remoteStream = new MediaStream();
-
-        await attachRemotePlayback(remoteStream, data.type);
-
-        // add local tracks
-        const activeStream = localStream;
-        if(!activeStream || sessionId !== callSessionId || endingCall) return;
-
-        activeStream.getTracks().forEach(track=>{
-          pc.addTrack(track, activeStream);
-        });
-
-        // receive remote tracks
-        pc.ontrack = (event)=>{
-          const stream = event.streams?.[0];
-          if(!stream) return;
-          stream.getTracks().forEach(track=>{
-            remoteStream.addTrack(track);
-          });
-          attachRemotePlayback(remoteStream, data.type);
-        };
-
-        // ================================
-        // 4. SEND ICE CANDIDATES (receiver)
-        // ================================
-        pc.onicecandidate = async(event)=>{
-          if(event.candidate && currentCallId){
-            await addDoc(
-              collection(FB.db,"calls",callId,"receiverCandidates"),
-              event.candidate.toJSON()
-            );
-          }
-        };
-
-        // ================================
-        // 5. GET CALL DOC (OFFER)
-        // ================================
-        const callRef = doc(FB.db,"calls",callId);
-        const callSnap = await getDoc(callRef);
-
-        if(!callSnap.exists()){
-          console.error("Call doc not found");
-          endCall();
-          return;
-        }
-
-        const callData = callSnap.data();
-
-        if(callData.status === "ended" || callData.status === "rejected"){
-          endCall();
-          return;
-        }
-
-        if(receiverId && callData.receiverId && callData.receiverId !== receiverId){
-          console.warn("Incoming call receiver mismatch");
-          endCall();
-          return;
-        }
-
-        if(!callData.offer){
-          console.error("Offer missing");
-          showToast("Call was not ready. Please ask them to call again.", "KitCat Call", "assets/KitCat-Logo.jpg", { force:true });
-          endCall();
-          return;
-        }
-
-        // ================================
-        // 6. SET REMOTE OFFER
-        // ================================
-        const offer = JSON.parse(callData.offer);
-
-        await pc.setRemoteDescription(
-          new RTCSessionDescription(offer)
-        );
-        await flushRemoteCandidates();
-
-        if(sessionId !== callSessionId || endingCall) return;
-
-        // ================================
-        // 7. CREATE + SEND ANSWER
-        // ================================
-        const answer = await pc.createAnswer();
-
-        await pc.setLocalDescription(answer);
-
-        await updateDoc(callRef,{
-          answer: JSON.stringify(answer),
-          status: "accepted"
-        });
-
-        // ================================
-        // 8. LISTEN CALL STATUS
-        // ================================
-        rememberCallUnsub(onSnapshot(callRef,(docSnap)=>{
-
-          if(!docSnap.exists()) return;
-
-          const updated = docSnap.data();
-
-          // call ended
-          if(updated.status === "ended"){
-            endCall();
-            return;
-          }
-
-        }));
-
-        // ================================
-        // 9. RECEIVE CALLER ICE
-        // ================================
-        rememberCallUnsub(onSnapshot(
-          collection(FB.db,"calls",callId,"callerCandidates"),
-          (snapshot)=>{
-            snapshot.docChanges().forEach((change)=>{
-              if(change.type === "added"){
-                addRemoteCandidate(change.doc.data());
-              }
-            });
-          }
-        ));
-
-        // ================================
-        // 10. ACTIVATE CALL SCREEN
-        // ================================
-        if(data.type === "video"){
-          showScreen("active-video");
-        }else{
-          showScreen("active");
-        }
-
-        startCallTimer();
-
-      }catch(err){
-        console.error("Accept Call Error:", err);
-        endCall();
+    window.acceptCall = async function () {
+      if (!window.currentCall) {
+        console.error("No incoming call data");
+        return;
       }
-    };
+
+      const callId = window.currentCall.id;
+      const callRef = doc(db, "calls", callId);
+
+      const callSnap = await getDoc(callRef);
+      const callData = callSnap.data();
+
+      if (!callData?.offer) {
+        console.error("Offer not found");
+        return;
+      }
+
+      // 🔹 create peer
+      const pc = new RTCPeerConnection(servers);
+      window.peerConnection = pc;
+
+      // 🔹 get user media
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: callData.type === "video"
+      });
+
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+      // 🔹 set remote offer
+      await pc.setRemoteDescription(
+        new RTCSessionDescription(callData.offer)
+      );
+
+      // 🔹 create answer
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      // 🔹 send answer to firestore
+      await updateDoc(callRef, {
+        answer: {
+          type: answer.type,
+          sdp: answer.sdp
+        },
+        status: "accepted"
+      });
+
+      // 🔹 listen ICE candidates (callee side)
+      pc.onicecandidate = async (event) => {
+        if (event.candidate) {
+          await updateDoc(callRef, {
+            calleeCandidates: arrayUnion(event.candidate.toJSON())
+          });
+        }
+      };
+
+      // 🔹 remote stream handle
+      pc.ontrack = (event) => {
+        const remoteStream = event.streams[0];
+        document.getElementById("remoteVideo").srcObject = remoteStream;
+      };
+
+      // 🔹 UI change
+      showScreen("active");
+
+      stopRingtone();
+    }
 
     // ======================================================
     // END CALL

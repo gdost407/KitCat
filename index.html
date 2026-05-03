@@ -85,6 +85,9 @@
     .login-google-btn:hover{background:#f6eeff;border-color:var(--purple-light);transform:translateY(-2px);box-shadow:0 6px 24px rgba(123,47,191,.2)}
     .google-icon{width:22px;height:22px;flex-shrink:0}
     .login-footer{position:absolute;bottom:5%;left:0;right:0;font-size:11px;color:#2A0054;font-weight:700;text-align:center}
+    .install-floating-btn{position:fixed;right:20px;bottom:20px;z-index:260;display:none;align-items:center;justify-content:center;gap:9px;padding:13px 18px;border:none;border-radius:14px;background:var(--purple-main);color:#fff;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 12px 34px rgba(42,0,84,.32);transition:transform .15s,box-shadow .2s,background .2s}
+    .install-floating-btn:hover{transform:translateY(-2px);background:var(--purple-dark);box-shadow:0 16px 42px rgba(42,0,84,.4)}
+    .install-floating-btn svg{width:20px;height:20px;flex-shrink:0}
     @media(max-width:600px){.login-left{display:none}.login-card{max-width:100%;margin:0;border-radius:0;min-height:100vh}.login-right{padding:48px 28px}}
   
     /* ══════════════════ APP SHELL ══════════════════ */
@@ -700,6 +703,15 @@
   </div>
  
   <!-- ══════ CHAT APP ══════ -->
+  <button id="installFloatingBtn" class="install-floating-btn" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <path d="M12 3v12"></path>
+      <path d="M8 11l4 4 4-4"></path>
+      <rect x="4" y="17" width="16" height="4" rx="2"></rect>
+    </svg>
+    <span>Install App</span>
+  </button>
+
   <div id="chatApp">
     <div class="app">
     
@@ -4561,16 +4573,35 @@
   </script>
   <script>
     let deferredPrompt;
+    const installButtons = [
+      document.getElementById("installBtn"),
+      document.getElementById("installFloatingBtn")
+    ].filter(Boolean);
+
+    function isStandaloneApp(){
+      return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    }
+
+    function setInstallButtonsVisible(visible){
+      installButtons.forEach((btn) => {
+        btn.style.display = visible ? "flex" : "none";
+      });
+    }
 
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       deferredPrompt = e;
 
-      document.getElementById("installBtn").style.display = "flex";
+      if (!isStandaloneApp()) {
+        setInstallButtonsVisible(true);
+      }
     });
 
-    document.getElementById("installBtn").addEventListener("click", async () => {
-      if (!deferredPrompt) return;
+    async function promptInstallApp(){
+      if (!deferredPrompt) {
+        alert("Install option is not available here. On Windows, use Chrome or Edge on HTTPS/localhost, then click the install icon in the address bar.");
+        return;
+      }
 
       deferredPrompt.prompt();
 
@@ -4578,10 +4609,24 @@
 
       if (result.outcome === "accepted") {
         console.log("User installed app");
+        setInstallButtonsVisible(false);
       }
 
       deferredPrompt = null;
+    }
+
+    installButtons.forEach((btn) => {
+      btn.addEventListener("click", promptInstallApp);
     });
+
+    window.addEventListener("appinstalled", () => {
+      deferredPrompt = null;
+      setInstallButtonsVisible(false);
+    });
+
+    if (isStandaloneApp()) {
+      setInstallButtonsVisible(false);
+    }
   </script>
 </body>
 </html>

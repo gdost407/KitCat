@@ -1,4 +1,4 @@
-const CACHE_NAME = "kitcat-v3";
+const CACHE_NAME = "kitcat-v5";
 
 const ASSETS = [
   "/",
@@ -11,26 +11,55 @@ const ASSETS = [
 // Install
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+    caches.open(CACHE_NAME).then(async(cache) => {
+      for (const asset of ASSETS) {
+        await cache.add(new Request(asset, { cache: "reload" }));
+      }
     })
   );
-  self.skipWaiting();
 });
 
 // Activate
 self.addEventListener("activate", (e) => {
-  e.waitUntil(self.clients.claim());
+  e.waitUntil(
+    caches.keys().then((names) => {
+      return Promise.all(
+        names
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      );
+    }).then(() => self.clients.claim())
+  );
   console.log("Service Worker Activated");
 });
 
-// Fetch (cache first)
+// Fetch fresh files first, then fall back to cache when offline.
 self.addEventListener("fetch", (e) => {
+  if (e.request.method !== "GET") return;
+
+  const url = new URL(e.request.url);
+  if (url.origin !== location.origin) return;
+
   e.respondWith(
-    caches.match(e.request).then((res) => {
-      return res || fetch(e.request);
-    })
+    fetch(new Request(e.request, { cache: "no-store" }))
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, copy));
+        return res;
+      })
+      .catch(() => {
+        if (e.request.mode === "navigate") {
+          return caches.match("/index.html");
+        }
+        return caches.match(e.request);
+      })
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 // Push Notifications

@@ -1466,6 +1466,8 @@
       style="position:absolute;top:20px;right:20px;width:120px;height:170px;object-fit:cover;background:#111;border-radius:16px;z-index:5;border:2px solid rgba(255,255,255,.4);">
     </video>
 
+    <audio id="remoteAudio" autoplay playsinline></audio>
+
     <!-- Overlay Content -->
     <div class="caller-info" style="position:absolute;top:25px;left:20px;z-index:6;color:#fff;">
       <div class="caller-name">Video Call</div>
@@ -2794,6 +2796,80 @@
       reader.readAsDataURL(file);
     };
 
+    let refreshingForUpdate = false;
+    let serviceWorkerUpdateHandlersReady = false;
+
+    async function clearAppCaches(){
+      if (!("caches" in window)) return;
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+    }
+
+    function showUpdateToast(reg){
+      showToast(
+        "New update available. Tap here to refresh.",
+        "KitCat Update",
+        "assets/KitCat-Logo.jpg",
+        {
+          force: true,
+          sticky: true,
+          onClick: async () => {
+            try {
+              await clearAppCaches();
+              if (reg && reg.waiting) {
+                reg.waiting.postMessage({ type: "SKIP_WAITING" });
+              } else {
+                location.reload();
+              }
+            } catch (err) {
+              console.error("Update refresh failed:", err);
+              location.reload();
+            }
+          }
+        }
+      );
+    }
+
+    async function registerAppServiceWorker(){
+      if (!("serviceWorker" in navigator)) return null;
+
+      const reg = await navigator.serviceWorker.register("/service-worker.js", {
+        updateViaCache: "none"
+      });
+
+      if (!serviceWorkerUpdateHandlersReady) {
+        serviceWorkerUpdateHandlersReady = true;
+
+        if (reg.waiting && navigator.serviceWorker.controller) {
+          showUpdateToast(reg);
+        }
+
+        reg.addEventListener("updatefound", () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+
+          newWorker.addEventListener("statechange", () => {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              showUpdateToast(reg);
+            }
+          });
+        });
+
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (refreshingForUpdate) return;
+          refreshingForUpdate = true;
+          location.reload();
+        });
+      }
+
+      reg.update().catch(() => {});
+      return reg;
+    }
+
+    window.addEventListener("load", () => {
+      registerAppServiceWorker().catch(err => console.log("SW error", err));
+    });
+
     window.initFCM = async function() {
       try {
         const permission = await Notification.requestPermission();
@@ -2803,7 +2879,7 @@
           return;
         }
 
-        const reg = await navigator.serviceWorker.register('/service-worker.js');
+        const reg = await registerAppServiceWorker();
 
         const token = await getToken(messaging, {
           vapidKey: 'BLbLc1f1rrVwiD6lHqRW5YCgemcU5E1sH9BMARsFcVD1ulsf21Oxmnddh33Qfx6eeGMjqirASa2Lw7ZcJWGEN-Q',
@@ -2925,11 +3001,85 @@
     let remoteStream = null;
     let currentCallId = null;
     let incomingCallData = null;
+    let callType = null;
+    let pendingRemoteCandidates = [];
+    let callUnsubs = [];
     let isMuted = false;
     let isSpeakerOn = true;
 
     const localVideo  = document.getElementById("localVideo");
     const remoteVideo = document.getElementById("remoteVideo");
+    const remoteAudio = document.getElementById("remoteAudio");
+
+    function rememberCallUnsub(unsub){
+      if(typeof unsub === "function") callUnsubs.push(unsub);
+    }
+
+    function clearCallListeners(){
+      callUnsubs.forEach(unsub=>{
+        try{ unsub(); }catch(e){}
+      });
+      callUnsubs = [];
+    }
+
+    async function playMediaElement(el){
+      if(!el) return;
+      try{ await el.play(); }catch(e){}
+    }
+
+    async function attachLocalPreview(stream, type){
+      if(type !== "video" || !localVideo) return;
+      localVideo.srcObject = stream;
+      localVideo.muted = true;
+      await playMediaElement(localVideo);
+    }
+
+    async function attachRemotePlayback(stream, type){
+      if(remoteVideo){
+        remoteVideo.srcObject = type === "video" ? stream : null;
+        remoteVideo.muted = false;
+        remoteVideo.volume = isSpeakerOn ? 1 : 0;
+        if(type === "video") await playMediaElement(remoteVideo);
+      }
+
+      if(remoteAudio){
+        remoteAudio.srcObject = type === "audio" ? stream : null;
+        remoteAudio.muted = type !== "audio" || !isSpeakerOn;
+        remoteAudio.volume = isSpeakerOn ? 1 : 0;
+        if(type === "audio") await playMediaElement(remoteAudio);
+      }
+    }
+
+    async function addRemoteCandidate(candidateData){
+      if(!pc || !candidateData) return;
+      const candidate = new RTCIceCandidate(candidateData);
+
+      if(!pc.remoteDescription){
+        pendingRemoteCandidates.push(candidate);
+        return;
+      }
+
+      try{
+        await pc.addIceCandidate(candidate);
+      }catch(err){
+        console.warn("ICE candidate error:", err);
+      }
+    }
+
+    async function flushRemoteCandidates(){
+      if(!pc || !pc.remoteDescription) return;
+
+      const candidates = pendingRemoteCandidates;
+      pendingRemoteCandidates = [];
+
+      for(const candidate of candidates){
+        try{
+          await pc.addIceCandidate(candidate);
+        }catch(err){
+          console.warn("Queued ICE candidate error:", err);
+        }
+      }
+    }
 
     // ======================================================
     // START CALL
@@ -2940,40 +3090,42 @@
 
         if(!APP.activeChatId || !APP.currentChatUser) return;
 
+        clearCallListeners();
+        pendingRemoteCandidates = [];
+        callType = type;
         const friend = APP.currentChatUser;
         updateCallUI(friend, type);
 
-        if(type === "video"){
-          showScreen("dialing");
-        }else{
-          showScreen("dialing");
-        }
+        showScreen("dialing");
 
         localStream = await navigator.mediaDevices.getUserMedia({
           audio:true,
           video:type === "video"
         });
 
-        if(type === "video" && localVideo){
-          localVideo.srcObject = localStream;
+        await attachLocalPreview(localStream, type);
+
+        if(type === "video"){
+          showScreen("active-video");
         }
 
         pc = new RTCPeerConnection(rtcConfig);
 
         remoteStream = new MediaStream();
 
-        if(remoteVideo){
-          remoteVideo.srcObject = remoteStream;
-        }
+        await attachRemotePlayback(remoteStream, type);
 
         localStream.getTracks().forEach(track=>{
           pc.addTrack(track, localStream);
         });
 
         pc.ontrack = (event)=>{
-          event.streams[0].getTracks().forEach(track=>{
+          const stream = event.streams?.[0];
+          if(!stream) return;
+          stream.getTracks().forEach(track=>{
             remoteStream.addTrack(track);
           });
+          attachRemotePlayback(remoteStream, type);
         };
 
         const callRef = await addDoc(collection(FB.db,"calls"),{
@@ -3002,7 +3154,7 @@
           offer: JSON.stringify(offer)
         });
 
-        onSnapshot(doc(FB.db,"calls",currentCallId), async(docSnap)=>{
+        rememberCallUnsub(onSnapshot(doc(FB.db,"calls",currentCallId), async(docSnap)=>{
 
           if(!docSnap.exists()) return;
 
@@ -3019,6 +3171,7 @@
             await pc.setRemoteDescription(
               new RTCSessionDescription(answer)
             );
+            await flushRemoteCandidates();
 
             if(type === "video"){
               showScreen("active-video");
@@ -3033,19 +3186,18 @@
             endCall();
           }
 
-        });
+        }));
 
-        onSnapshot(
+        rememberCallUnsub(onSnapshot(
           collection(FB.db,"calls",currentCallId,"receiverCandidates"),
           (snapshot)=>{
             snapshot.docChanges().forEach((change)=>{
               if(change.type === "added"){
-                const candidate = new RTCIceCandidate(change.doc.data());
-                pc.addIceCandidate(candidate);
+                addRemoteCandidate(change.doc.data());
               }
             });
           }
-        );
+        ));
 
       }catch(err){
         console.error(err);
@@ -3070,7 +3222,10 @@
         const callId = incomingCallData.id;
         const data   = incomingCallData.data;
 
+        clearCallListeners();
+        pendingRemoteCandidates = [];
         currentCallId = callId;
+        callType = data.type;
 
         // ================================
         // 1. UPDATE UI
@@ -3091,9 +3246,7 @@
           video: data.type === "video"
         });
 
-        if(data.type === "video" && localVideo){
-          localVideo.srcObject = localStream;
-        }
+        await attachLocalPreview(localStream, data.type);
 
         // ================================
         // 3. CREATE PEER CONNECTION
@@ -3102,9 +3255,7 @@
 
         remoteStream = new MediaStream();
 
-        if(remoteVideo){
-          remoteVideo.srcObject = remoteStream;
-        }
+        await attachRemotePlayback(remoteStream, data.type);
 
         // add local tracks
         localStream.getTracks().forEach(track=>{
@@ -3113,9 +3264,12 @@
 
         // receive remote tracks
         pc.ontrack = (event)=>{
-          event.streams[0].getTracks().forEach(track=>{
+          const stream = event.streams?.[0];
+          if(!stream) return;
+          stream.getTracks().forEach(track=>{
             remoteStream.addTrack(track);
           });
+          attachRemotePlayback(remoteStream, data.type);
         };
 
         // ================================
@@ -3158,6 +3312,7 @@
         await pc.setRemoteDescription(
           new RTCSessionDescription(offer)
         );
+        await flushRemoteCandidates();
 
         // ================================
         // 7. CREATE + SEND ANSWER
@@ -3174,7 +3329,7 @@
         // ================================
         // 8. LISTEN CALL STATUS
         // ================================
-        onSnapshot(callRef,(docSnap)=>{
+        rememberCallUnsub(onSnapshot(callRef,(docSnap)=>{
 
           if(!docSnap.exists()) return;
 
@@ -3186,23 +3341,21 @@
             return;
           }
 
-        });
+        }));
 
         // ================================
         // 9. RECEIVE CALLER ICE
         // ================================
-        onSnapshot(
+        rememberCallUnsub(onSnapshot(
           collection(FB.db,"calls",callId,"callerCandidates"),
           (snapshot)=>{
             snapshot.docChanges().forEach((change)=>{
               if(change.type === "added"){
-                const candidate =
-                  new RTCIceCandidate(change.doc.data());
-                pc.addIceCandidate(candidate);
+                addRemoteCandidate(change.doc.data());
               }
             });
           }
-        );
+        ));
 
         // ================================
         // 10. ACTIVATE CALL SCREEN
@@ -3225,6 +3378,8 @@
     // END CALL
     // ======================================================
     window.endCall = async function(){
+
+      clearCallListeners();
 
       try{
         if(currentCallId){
@@ -3253,8 +3408,16 @@
 
       if(localVideo) localVideo.srcObject = null;
       if(remoteVideo) remoteVideo.srcObject = null;
+      if(remoteAudio) remoteAudio.srcObject = null;
 
       currentCallId = null;
+      incomingCallData = null;
+      callType = null;
+      pendingRemoteCandidates = [];
+      APP.callBusy = false;
+      isMuted = false;
+      isSpeakerOn = true;
+      stopSounds();
       showScreen();
     };
 
@@ -3303,11 +3466,17 @@
     // ======================================================
     window.toggleSpeaker = function(){
 
-      if(!remoteVideo) return;
-
       isSpeakerOn = !isSpeakerOn;
-      remoteVideo.muted = !isSpeakerOn;
-      remoteVideo.volume = isSpeakerOn ? 1 : 0;
+
+      if(remoteVideo){
+        remoteVideo.muted = callType === "video" ? !isSpeakerOn : true;
+        remoteVideo.volume = isSpeakerOn ? 1 : 0;
+      }
+
+      if(remoteAudio){
+        remoteAudio.muted = callType === "audio" ? !isSpeakerOn : true;
+        remoteAudio.volume = isSpeakerOn ? 1 : 0;
+      }
     };
 
     // ======================================================
@@ -3339,10 +3508,10 @@
           
     window.listenAnswer = async function (callId){
 
-      onSnapshot(doc(FB.db,"calls",callId), async(snap)=>{
+      rememberCallUnsub(onSnapshot(doc(FB.db,"calls",callId), async(snap)=>{
 
         const data = snap.data();
-        if(!data) return;
+        if(!data || !pc) return;
 
         if(data.answer && !pc.currentRemoteDescription){
 
@@ -3350,6 +3519,7 @@
             await pc.setRemoteDescription(
               new RTCSessionDescription(answer)
             );
+            await flushRemoteCandidates();
 
             if(APP.currentCallType === 'video'){
               showScreen('active-video');
@@ -3374,17 +3544,16 @@
           endCall();
         }
 
-      });
+      }));
 
-      onSnapshot(collection(FB.db, "calls", callId, "receiverCandidates"),
+      rememberCallUnsub(onSnapshot(collection(FB.db, "calls", callId, "receiverCandidates"),
         (snapshot) => {
           snapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
-              const candidate = new RTCIceCandidate(change.doc.data());
-              pc.addIceCandidate(candidate);
+              addRemoteCandidate(change.doc.data());
             }
           });
-        });
+        }));
 
     }
 
@@ -3539,14 +3708,25 @@
 
     const mobile = () => window.innerWidth <= 768;
     
-    function showToast(message, name = "KitCat", img = "assets/KitCat-Logo.jpg") {
-      if (!APP.settings.notifications) return;
+    function showToast(message, name = "KitCat", img = "assets/KitCat-Logo.jpg", options = {}) {
+      if (!options.force && !APP.settings.notifications) return;
       const toast = document.getElementById("liveToast");
 
       document.getElementById("toast-message").innerText = message;
       document.getElementById("toast-name").innerText = name;
       document.getElementById("toast-img").src = img;
       document.getElementById("toast-time").innerText = "";
+
+      toast.onclick = null;
+      toast.style.cursor = "";
+
+      if (typeof options.onClick === "function") {
+        toast.onclick = (event) => {
+          if (event.target.closest(".btn-close")) return;
+          options.onClick();
+        };
+        toast.style.cursor = "pointer";
+      }
 
       toast.classList.add("show");
 
@@ -3555,15 +3735,24 @@
         APP.sound.play().catch(() => {});
       }
       
-      // auto hide after 3 sec
-      setTimeout(() => {
-        toast.classList.remove("show");
-      }, 3000);
+      if (!options.sticky) {
+        setTimeout(() => {
+          toast.classList.remove("show");
+          toast.onclick = null;
+          toast.style.cursor = "";
+        }, 3000);
+      }
     }
 
     function hideToast() {
-      document.getElementById("liveToast").classList.remove("show");
+      const toast = document.getElementById("liveToast");
+      toast.classList.remove("show");
+      toast.onclick = null;
+      toast.style.cursor = "";
     }
+
+    window.showToast = showToast;
+    window.hideToast = hideToast;
 
     function clearListener(key) {
       if (APP.listeners[key]) {
@@ -4369,15 +4558,6 @@
       setSection('contact', false);
       replaceNavState('contact');
     });
-  </script>
-  <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/service-worker.js")
-        .then(reg => console.log("SW registered"))
-        .catch(err => console.log("SW error", err));
-    });
-  }
   </script>
   <script>
     let deferredPrompt;

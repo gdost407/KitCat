@@ -422,6 +422,7 @@
     height:80%;
     object-fit:cover;
     background:#111;
+    transform: scaleX(-1);
     }
 
     .call-status{
@@ -1184,7 +1185,7 @@
             <!-- App version -->
             <div class="settings-version">
               <span>🐱 KitCat</span>
-              <span>v6.0.4 · Made with ♥ by ASG</span>
+              <span>v6.0.5 · Made with ♥ by ASG</span>
             </div>
  
           </div><!-- .settings-body -->
@@ -3330,6 +3331,7 @@
       }
 
       const callId = window.currentCall.id;
+      currentCallId = callId;  // Store for endCall
       const callRef = doc(FB.db, "calls", callId);
 
       let callData = null;
@@ -3421,6 +3423,20 @@
         const remoteStream = event.streams[0];
         document.getElementById("remoteVideo").srcObject = remoteStream;
       };
+
+      // 🔹 Listen for call status changes (when caller ends the call)
+      rememberCallUnsub(onSnapshot(callRef, (docSnap) => {
+        const data = docSnap.data();
+        if (!data) return;
+
+        // If caller ends the call, close receiver side
+        if (data.status === "ended" || data.status === "rejected") {
+          if (!endingCall) {
+            endingCall = true;
+            endCall();
+          }
+        }
+      }));
 
       // 🔹 UI change
       showScreen(callData.type === "video" ? "active-video" : "active");

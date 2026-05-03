@@ -1184,7 +1184,7 @@
             <!-- App version -->
             <div class="settings-version">
               <span>🐱 KitCat</span>
-              <span>v6.0.3 · Made with ♥ by ASG</span>
+              <span>v6.0.4 · Made with ♥ by ASG</span>
             </div>
  
           </div><!-- .settings-body -->
@@ -3221,6 +3221,13 @@
 
         console.log("Call update:", data.status);
 
+        if (data?.answer && !window.answerSet) {
+          window.answerSet = true;
+
+          const remoteDesc = new RTCSessionDescription(data.answer);
+          window.peerConnection.setRemoteDescription(remoteDesc);
+        }
+
         // ✅ when accepted
         if (data.status === "accepted") {
 
@@ -3243,14 +3250,55 @@
       document.querySelectorAll('.caller-name').forEach(el=>{
         el.textContent = APP.currentChatUser.name || "Kit Cat";
       });
+
+      const pc = new RTCPeerConnection(servers);
+      window.peerConnection = pc;
+
+      const callerCandidates = collection(callDoc, "callerCandidates");
+
+      pc.onicecandidate = async (event) => {
+        if (event.candidate) {
+          await addDoc(callerCandidates, event.candidate.toJSON());
+        }
+      };
+
+      // media
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: type === "video"
+      });
+      window.localStream = stream;
+
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+      // create offer
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      // 🔥 SAVE OFFER
+      await updateDoc(callDoc, {
+        offer: {
+          type: offer.type,
+          sdp: offer.sdp
+        }
+      });
+
       // store current call (use later in next steps)
       window.CURRENT_CALL = {
         callId,
         ...callData
       };
 
-      return callId;
+      onSnapshot(collection(callDoc, "calleeCandidates"), (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const candidate = new RTCIceCandidate(change.doc.data());
+            window.peerConnection.addIceCandidate(candidate);
+          }
+        });
+      });
 
+      return callId;
 
       } catch (err) {
       console.error("Start call error:", err);
@@ -3284,11 +3332,20 @@
       const pc = new RTCPeerConnection(servers);
       window.peerConnection = pc;
 
+      const calleeCandidates = collection(callRef, "calleeCandidates");
+
+      pc.onicecandidate = async (event) => {
+        if (event.candidate) {
+          await addDoc(calleeCandidates, event.candidate.toJSON());
+        }
+      };
+
       // 🔹 get user media
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: callData.type === "video"
       });
+      window.localStream = stream;
 
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
@@ -3296,6 +3353,15 @@
       await pc.setRemoteDescription(
         new RTCSessionDescription(callData.offer)
       );
+
+      onSnapshot(collection(callRef, "callerCandidates"), (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const candidate = new RTCIceCandidate(change.doc.data());
+            pc.addIceCandidate(candidate);
+          }
+        });
+      });
 
       // 🔹 create answer
       const answer = await pc.createAnswer();

@@ -3232,13 +3232,16 @@
 
           const remoteDesc = new RTCSessionDescription(data.answer);
           window.peerConnection.setRemoteDescription(remoteDesc);
+          
+          // Flush any pending ICE candidates now that remote description is set
+          flushRemoteCandidates();
         }
 
         // ✅ when accepted
         if (data.status === "accepted") {
 
           stopSounds();              // dial tone stop
-          showScreen("active");      // switch to call screen
+          showScreen(callType === "video" ? "active-video" : "active");      // switch to call screen
 
         }
 
@@ -3302,8 +3305,7 @@
       rememberCallUnsub(onSnapshot(collection(FB.db, "calls", callId, "receiverCandidates"), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
-            const candidate = new RTCIceCandidate(change.doc.data());
-            window.peerConnection.addIceCandidate(candidate);
+            addRemoteCandidate(change.doc.data());
           }
         });
       }));
@@ -3389,8 +3391,7 @@
       rememberCallUnsub(onSnapshot(collection(FB.db, "calls", callId, "callerCandidates"), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
-            const candidate = new RTCIceCandidate(change.doc.data());
-            pc.addIceCandidate(candidate);
+            addRemoteCandidate(change.doc.data());
           }
         });
       }));

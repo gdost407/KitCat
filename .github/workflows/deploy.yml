@@ -13,45 +13,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Create deploy marker
-        run: |
-          {
-            echo "commit=${GITHUB_SHA}"
-            echo "run_id=${GITHUB_RUN_ID}"
-            echo "deployed_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          } > deploy-marker.txt
-
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
           server: ${{ secrets.HOST_FTP_SERVER }}
           username: ${{ secrets.HOST_FTP_USERNAME }}
           password: ${{ secrets.HOST_FTP_PASSWORD }}
-          server-dir: /KitCat/
-
-      - name: Verify FTP upload location
-        env:
-          FTP_SERVER: ${{ secrets.HOST_FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.HOST_FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.HOST_FTP_PASSWORD }}
-        run: |
-          set +e
-          FTP_HOST="${FTP_SERVER#ftp://}"
-          FTP_HOST="${FTP_HOST%/}"
-
-          for path in "/" "/KitCat/" "/KitCat/assets/" "/kitCat/" "/public_html/" "/public_html/KitCat/" "/public_html/kitCat/"; do
-            echo "---- Listing ftp://$FTP_HOST$path"
-            curl --silent --show-error --user "$FTP_USERNAME:$FTP_PASSWORD" "ftp://$FTP_HOST$path"
-            echo
-          done
-
-      - name: Verify live website marker
-        run: |
-          set +e
-          for url in \
-            "https://aniketgolhar.in/KitCat/deploy-marker.txt?run=${GITHUB_RUN_ID}" \
-            "https://kitcat.aniketgolhar.in/deploy-marker.txt?run=${GITHUB_RUN_ID}"; do
-            echo "---- Checking $url"
-            curl --silent --show-error --location "$url"
-            echo
-          done
+          server-dir: /domains/aniketgolhar.in/public_html/KitCat/

@@ -1,4 +1,4 @@
-const CACHE_NAME = "kitcat-v5";
+const CACHE_NAME = "kitcat-v6";
 
 const ASSETS = [
   "/",
@@ -7,6 +7,8 @@ const ASSETS = [
   "/assets/KitCat-Logo.jpg",
   "/assets/KitCat-bg.png"
 ];
+
+const clientActiveChats = new Map();
 
 // Install
 self.addEventListener("install", (e) => {
@@ -60,6 +62,10 @@ self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
+
+  if (event.data && event.data.type === "ACTIVE_CHAT" && event.source?.id) {
+    clientActiveChats.set(event.source.id, String(event.data.chatId || ""));
+  }
 });
 
 // Push Notifications
@@ -68,7 +74,8 @@ self.addEventListener("push", (event) => {
   let data = {};
 
   try {
-    data = event.data.json();
+    const payload = event.data.json();
+    data = payload.data || payload;
   } catch (e) {
     data = {
       title: "KitCat",
@@ -78,21 +85,37 @@ self.addEventListener("push", (event) => {
 
   const title = data.title || "KitCat";
   const body  = data.body || "You received a message";
+  const chatId = String(data.chatId || "");
 
   const options = {
     body: body,
     icon: "/assets/KitCat-Logo.jpg",
     badge: "/assets/KitCat-Logo.jpg",
     vibrate: [200, 100, 200],
-    tag: data.chatId || "kitcat-chat",
+    tag: chatId || "kitcat-chat",
     data: {
-      chatId: data.chatId || "",
+      chatId: chatId,
       click_action: "/"
     }
   };
 
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    clients.matchAll({
+      type: "window",
+      includeUncontrolled: true
+    }).then((clientList) => {
+      const isChatOpen = clientList.some((client) => {
+        const activeChatId = clientActiveChats.get(client.id) || "";
+        const isActiveWindow = client.focused || client.visibilityState === "visible";
+        return chatId && activeChatId === chatId && isActiveWindow;
+      });
+
+      if (isChatOpen) {
+        return;
+      }
+
+      return self.registration.showNotification(title, options);
+    })
   );
 });
 

@@ -110,23 +110,16 @@ $payload = [
     "message" => [
         "token" => $token,
 
-        "notification" => [
-            "title" => $title,
-            "body"  => $body
-        ],
-
         "data" => [
-            "title"  => $title,
-            "body"   => $body,
-            "chatId" => $chatId,
-            "photo"  => $photo
+            "title"  => (string)$title,
+            "body"   => (string)$body,
+            "chatId" => (string)$chatId,
+            "photo"  => (string)$photo
         ],
 
         "webpush" => [
-            "notification" => [
-                "title" => $title,
-                "body"  => $body,
-                "icon"  => "https://kitcat.aniketgolhar.in/assets/KitCat-Logo.jpg"
+            "headers" => [
+                "Urgency" => "high"
             ]
         ]
     ]

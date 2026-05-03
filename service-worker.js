@@ -1,4 +1,6 @@
-const CACHE_NAME = "kitcat-v6";
+// const CACHE_NAME = "kitcat-v6";
+const CACHE_STATIC = "kitcat-static-v1";
+const CACHE_DYNAMIC = "kitcat-dynamic-v1";
 
 const ASSETS = [
   "/",
@@ -13,12 +15,11 @@ const clientActiveChats = new Map();
 // Install
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(async(cache) => {
-      for (const asset of ASSETS) {
-        await cache.add(new Request(asset, { cache: "reload" }));
-      }
+    caches.open(CACHE_STATIC).then((cache) => {
+      return cache.addAll(ASSETS);
     })
   );
+  self.skipWaiting();
 });
 
 // Activate
@@ -26,33 +27,49 @@ self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys().then((names) => {
       return Promise.all(
-        names
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+        names.map((name) => {
+          if (name !== CACHE_STATIC && name !== CACHE_DYNAMIC) {
+            return caches.delete(name);
+          }
+        })
       );
     }).then(() => self.clients.claim())
   );
-  console.log("Service Worker Activated");
 });
 
 // Fetch fresh files first, then fall back to cache when offline.
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
-
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
+  if (e.request.mode === "navigate") {
+    e.respondWith(
+      caches.match("/index.html").then((cached) => {
+        return cached || fetch(e.request);
+      })
+    );
+    return;
+  }
+
+  if (ASSETS.includes(url.pathname)) {
+    e.respondWith(
+      caches.match(e.request).then((cached) => {
+        return cached || fetch(e.request);
+      })
+    );
+    return;
+  }
 
   e.respondWith(
-    fetch(new Request(e.request, { cache: "no-store" }))
+    fetch(e.request)
       .then((res) => {
         const copy = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, copy));
+        caches.open(CACHE_DYNAMIC).then((cache) => {
+          cache.put(e.request, copy);
+        });
         return res;
       })
       .catch(() => {
-        if (e.request.mode === "navigate") {
-          return caches.match("/index.html");
-        }
         return caches.match(e.request);
       })
   );

@@ -1573,7 +1573,8 @@
         requests: null,
         userStatus: null,
         allUserStatus: {}
-      }
+      },
+      userCache: {}
     };
 
     // Make Firebase globally accessible
@@ -2037,13 +2038,20 @@
       // =====================================
       // 5. GET RECEIVER USER DOC
       // =====================================
-      const userSnap = await getDoc(
-        doc(FB.db, "users", receiverUid)
-      );
+      let userData = getUserFromCache(receiverUid);
 
-      if (!userSnap.exists()) return;
+      if (!userData) {
+        const userSnap = await getDoc(
+          doc(FB.db, "users", receiverUid)
+        );
 
-      const userData = userSnap.data();
+        if (!userSnap.exists()) return;
+
+        userData = userSnap.data();
+
+        // ✅ Save in cache
+        setUserToCache(receiverUid, userData);
+      }
 
       const token = userData.fcmToken || "";
 
@@ -2738,10 +2746,32 @@
     };
 
     window.deleteChatForEveryone = async function (chatId) {
-
       try {
+        // ================================
+        // 🔹 STEP 0 — BACKUP FIRST (NEW)
+        // ================================
+        const backupRes = await fetch("backup-delete-chat.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            chatId: chatId,
+            deletedBy: APP.user.uid
+          })
+        });
 
-        // 🔹 1. delete all messages only
+        const backupData = await backupRes.json();
+        console.log("Backup response:", backupData);
+
+        if (backupData.status !== "success") {
+          alert("Backup failed. Delete stopped.");
+          return;
+        }
+
+        // ================================
+        // 🔹 STEP 1 — DELETE MESSAGES (EXISTING)
+        // ================================
         const q = query(
           collection(FB.db, "messages"),
           where("chatId", "==", chatId)
@@ -2757,13 +2787,17 @@
 
         await Promise.all(deletes);
 
-        // 🔹 2. reset chat meta (important)
+        // ================================
+        // 🔹 STEP 2 — RESET CHAT META
+        // ================================
         await updateDoc(doc(FB.db, "chats", chatId), {
           lastMessage: "",
           lastMessageTime: serverTimestamp()
         });
 
-        // 🔹 3. reset chatMembers UI data
+        // ================================
+        // 🔹 STEP 3 — RESET chatMembers
+        // ================================
         const membersQ = query(
           collection(FB.db, "chatMembers"),
           where("chatId", "==", chatId)
@@ -2785,13 +2819,14 @@
 
         await Promise.all(updates);
 
+        // ================================
+        // 🔹 UI CLEANUP
+        // ================================
         closeMsgMenu();
-
-        // UI reset
         goBackToList();
 
       } catch (e) {
-        console.error("Delete chat (messages only) error:", e);
+        console.error("Delete chat (with backup) error:", e);
       }
     };
 
@@ -3822,6 +3857,13 @@
     };
   </script>
   <script>
+    function getUserFromCache(uid) {
+      return APP.userCache[uid] || null;
+    }
+
+    function setUserToCache(uid, data) {
+      APP.userCache[uid] = data;
+    }
     let NAV_LOCK = false;
           
     function pushNavState(type, data = {}) {
@@ -4286,7 +4328,7 @@
       const content = document.getElementById("msgMenuContent");
 
       let html = `
-        <div class="msg-menu-item" onclick="deleteChatForMe('${chatId}')">
+        <div class="msg-menu-item" onclick="deleteChatForMe('${chatId}')" style="display: none;">
           Delete chat for me
         </div>
         <div class="msg-menu-item danger" onclick="deleteChatForEveryone('${chatId}')">

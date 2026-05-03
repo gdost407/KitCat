@@ -1184,7 +1184,7 @@
             <!-- App version -->
             <div class="settings-version">
               <span>🐱 KitCat</span>
-              <span>v6.0.2 · Made with ♥ by ASG</span>
+              <span>v6.0.3 · Made with ♥ by ASG</span>
             </div>
  
           </div><!-- .settings-body -->
@@ -1682,6 +1682,10 @@
 
           console.log("Incoming call data:", docSnap.id, data);
           if(typeof window.showIncomingPopup === "function"){
+            window.currentCall = {
+              id: docSnap.id,
+              ...data
+            };
             window.showIncomingPopup(docSnap.id,data);
           }else{
             console.warn("showIncomingPopup is not ready, retrying incoming call popup");

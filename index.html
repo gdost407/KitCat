@@ -1680,6 +1680,11 @@
             return;
           }
 
+          if(!data.offer){
+            console.warn("Skipping ringing call without offer:", docSnap.id, data);
+            return;
+          }
+
           console.log("Incoming call data:", docSnap.id, data);
           if(typeof window.showIncomingPopup === "function"){
             window.currentCall = {
@@ -3199,29 +3204,30 @@
 
       try {
       const callData = {
-        callerId: APP.user.uid,
+        callerId: callerId,
         receiverId: receiverUid,
         type: type, // "audio" or "video"
-        status: "ringing",
+        status: "creating",
         createdAt: serverTimestamp()
       };
 
       const docRef = await addDoc(collection(FB.db, "calls"), callData);
 
       const callId = docRef.id;
+      const callRef = doc(FB.db, "calls", callId);
 
       console.log("Call started:", callId);
       showScreen("dialing");
       playDialTone();
 
-      onSnapshot(doc(FB.db, "calls", callId), (docSnap) => {
+      rememberCallUnsub(onSnapshot(callRef, (docSnap) => {
 
         const data = docSnap.data();
         if (!data) return;
 
         console.log("Call update:", data.status);
 
-        if (data?.answer && !window.answerSet) {
+        if (data?.answer && !window.answerSet && window.peerConnection) {
           window.answerSet = true;
 
           const remoteDesc = new RTCSessionDescription(data.answer);
@@ -3245,16 +3251,16 @@
           window.CURRENT_CALL = null;
         }
 
-      });
+      }));
 
       document.querySelectorAll('.caller-name').forEach(el=>{
         el.textContent = APP.currentChatUser.name || "Kit Cat";
       });
 
-      const pc = new RTCPeerConnection(servers);
+      pc = new RTCPeerConnection(rtcConfig);
       window.peerConnection = pc;
 
-      const callerCandidates = collection(callDoc, "callerCandidates");
+      const callerCandidates = collection(FB.db, "calls", callId, "callerCandidates");
 
       pc.onicecandidate = async (event) => {
         if (event.candidate) {
@@ -3267,7 +3273,9 @@
         audio: true,
         video: type === "video"
       });
+      localStream = stream;
       window.localStream = stream;
+      await attachLocalPreview(stream, type);
 
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
@@ -3276,27 +3284,29 @@
       await pc.setLocalDescription(offer);
 
       // 🔥 SAVE OFFER
-      await setDoc(callDoc, {
+      await updateDoc(callRef, {
         offer: {
           type: offer.type,
           sdp: offer.sdp
-        }
+        },
+        status: "ringing"
       });
 
       // store current call (use later in next steps)
       window.CURRENT_CALL = {
         callId,
-        ...callData
+        ...callData,
+        status: "ringing"
       };
 
-      onSnapshot(collection(callDoc, "calleeCandidates"), (snapshot) => {
+      rememberCallUnsub(onSnapshot(collection(FB.db, "calls", callId, "receiverCandidates"), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const candidate = new RTCIceCandidate(change.doc.data());
             window.peerConnection.addIceCandidate(candidate);
           }
         });
-      });
+      }));
 
       return callId;
 
@@ -3318,34 +3328,56 @@
       }
 
       const callId = window.currentCall.id;
-      const callRef = doc(db, "calls", callId);
+      const callRef = doc(FB.db, "calls", callId);
 
-      const callSnap = await getDoc(callRef);
-      const callData = callSnap.data();
+      let callData = null;
+
+      for(let attempt = 0; attempt < 10; attempt++){
+        const callSnap = await getDoc(callRef);
+        callData = callSnap.data();
+
+        if(callData?.offer) break;
+        if(callData?.status === "ended" || callData?.status === "rejected") return;
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
 
       if (!callData?.offer) {
-        console.error("Offer not found");
+        console.error("Offer not found after waiting", callId, callData);
+        showToast("Call is still connecting. Please try again.", "KitCat Call", "assets/KitCat-Logo.jpg", { force:true });
         return;
       }
 
       // 🔹 create peer
-      const pc = new RTCPeerConnection(servers);
+      pc = new RTCPeerConnection(rtcConfig);
       window.peerConnection = pc;
 
-      const calleeCandidates = collection(callRef, "calleeCandidates");
+      const receiverCandidates = collection(FB.db, "calls", callId, "receiverCandidates");
 
       pc.onicecandidate = async (event) => {
         if (event.candidate) {
-          await addDoc(calleeCandidates, event.candidate.toJSON());
+          await addDoc(receiverCandidates, event.candidate.toJSON());
         }
       };
 
       // 🔹 get user media
+      remoteStream = new MediaStream();
+      await attachRemotePlayback(remoteStream, callData.type);
+
+      pc.ontrack = (event) => {
+        const incomingStream = event.streams?.[0];
+        if(!incomingStream) return;
+        incomingStream.getTracks().forEach(track => remoteStream.addTrack(track));
+        attachRemotePlayback(remoteStream, callData.type);
+      };
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: callData.type === "video"
       });
+      localStream = stream;
       window.localStream = stream;
+      await attachLocalPreview(stream, callData.type);
 
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
@@ -3354,14 +3386,14 @@
         new RTCSessionDescription(callData.offer)
       );
 
-      onSnapshot(collection(callRef, "callerCandidates"), (snapshot) => {
+      rememberCallUnsub(onSnapshot(collection(FB.db, "calls", callId, "callerCandidates"), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const candidate = new RTCIceCandidate(change.doc.data());
             pc.addIceCandidate(candidate);
           }
         });
-      });
+      }));
 
       // 🔹 create answer
       const answer = await pc.createAnswer();
@@ -3379,9 +3411,7 @@
       // 🔹 listen ICE candidates (callee side)
       pc.onicecandidate = async (event) => {
         if (event.candidate) {
-          await updateDoc(callRef, {
-            calleeCandidates: arrayUnion(event.candidate.toJSON())
-          });
+          await addDoc(receiverCandidates, event.candidate.toJSON());
         }
       };
 
@@ -3392,9 +3422,9 @@
       };
 
       // 🔹 UI change
-      showScreen("active");
+      showScreen(callData.type === "video" ? "active-video" : "active");
 
-      stopRingtone();
+      stopSounds();
     }
 
     // ======================================================
@@ -3622,6 +3652,7 @@
     window.showIncomingPopup = async function(id, data){
       const screenName = data.type === 'video' ? 'incoming-video' : 'incoming-audio';
       console.log("showIncomingPopup called:", id, screenName, data);
+      window.currentCall = { id, ...data };
 
       if(incomingCallData?.id === id){
         updateCallUI(friendMap.get(data.callerId) || { name:'Incoming Call' }, data.type);

@@ -1,0 +1,21 @@
+{
+  "name": "KitCat Chat",
+  "short_name": "KitCat",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#5F369F",
+  "theme_color": "#5F369F",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/KitCat-Logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "assets/KitCat-Logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

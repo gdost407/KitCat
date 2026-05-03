@@ -1,0 +1,6 @@
+# Ignore the config file that contains sensitive information
+assets/config.js
+# Ignore environment variable files
+.env
+# Ignore log files
+firebase-service-account.json

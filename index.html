@@ -1184,7 +1184,7 @@
             <!-- App version -->
             <div class="settings-version">
               <span>🐱 KitCat</span>
-              <span>v3.0.1 · Made with ♥ by ASG</span>
+              <span>v3.0.2 · Made with ♥ by ASG</span>
             </div>
  
           </div><!-- .settings-body -->
@@ -1658,8 +1658,7 @@
       if (incomingUnsub) incomingUnsub();
       const q = query(
         collection(FB.db,"calls"),
-        where("receiverId","==",uid),
-        where("status","==","ringing")
+        where("receiverId","==",uid)
       );
 
       incomingUnsub = onSnapshot(q,(snap)=>{
@@ -1668,7 +1667,7 @@
           const docSnap = change.doc;
           const data = docSnap.data();
 
-          if(change.type === "removed"){
+          if(data.status !== "ringing"){
             if(incomingCallData?.id === docSnap.id && !pc){
               incomingCallData = null;
               APP.callBusy = false;
@@ -1680,10 +1679,22 @@
           }
 
           console.log("Incoming call data:", docSnap.id, data);
-          showIncomingPopup(docSnap.id,data);
+          if(typeof window.showIncomingPopup === "function"){
+            window.showIncomingPopup(docSnap.id,data);
+          }else{
+            console.warn("showIncomingPopup is not ready, retrying incoming call popup");
+            setTimeout(()=>{
+              if(typeof window.showIncomingPopup === "function"){
+                window.showIncomingPopup(docSnap.id,data);
+              }else{
+                console.error("showIncomingPopup still not ready");
+              }
+            }, 300);
+          }
         });
       },(err)=>{
         console.error("Incoming call listener error:", err);
+        showToast("Incoming call listener failed. Refresh app once.", "KitCat Call", "assets/KitCat-Logo.jpg", { force:true });
       });
     }
 
@@ -3607,6 +3618,7 @@
 
       document.querySelectorAll('.call-overlay').forEach(el=>{
         el.classList.remove('active');
+        el.style.display = '';
       });
 
       if(!name) return;
@@ -3614,6 +3626,9 @@
       const screen = document.getElementById('screen-' + name);
       if(screen){
         screen.classList.add('active');
+        screen.style.display = 'flex';
+      }else{
+        console.warn("Call screen not found:", name);
       }
     }
           
@@ -3688,6 +3703,43 @@
       APP.callBusy = false;
       stopSounds();
       showScreen();
+    };
+
+    window.showIncomingPopup = async function(id, data){
+      const screenName = data.type === 'video' ? 'incoming-video' : 'incoming-audio';
+
+      if(incomingCallData?.id === id){
+        updateCallUI(friendMap.get(data.callerId) || { name:'Incoming Call' }, data.type);
+        showScreen(screenName);
+        return;
+      }
+
+      if(APP.callBusy){
+        const hasVisibleCallScreen = Boolean(document.querySelector('.call-overlay.active'));
+        if(pc || hasVisibleCallScreen){
+          await updateDoc(doc(FB.db,"calls",id),{ status:'busy' }).catch(()=>{});
+          return;
+        }
+
+        APP.callBusy = false;
+      }
+
+      APP.callBusy = true;
+      incomingCallData = { id, data };
+
+      const caller = friendMap.get(data.callerId) || {
+        name:'Incoming Call'
+      };
+
+      updateCallUI(caller, data.type);
+      showScreen(screenName);
+      playRingtone();
+      showToast(
+        data.type === "video" ? "Incoming video call" : "Incoming audio call",
+        caller.name || "KitCat Call",
+        caller.photoURL || "assets/KitCat-Logo.jpg",
+        { force:true }
+      );
     };
 
     window.updateCallUI = function(user, type){
@@ -3808,39 +3860,6 @@
       };
 
       history.pushState(state, "", location.href);
-    }
-
-    async function showIncomingPopup(id, data){
-      if(incomingCallData?.id === id){
-        return;
-      }
-
-      if(APP.callBusy){
-        await updateDoc(doc(FB.db,"calls",id),{ status:'busy' }).catch(()=>{});
-        return;
-      }
-
-      APP.callBusy = true;
-      incomingCallData = { id, data };
-      const caller = friendMap.get(data.callerId) || {
-        name:'Incoming Call'
-      };
-
-      updateCallUI(caller, data.type);
-      playRingtone();
-      showToast(
-        data.type === "video" ? "Incoming video call" : "Incoming audio call",
-        caller.name || "KitCat Call",
-        caller.photoURL || "assets/KitCat-Logo.jpg",
-        { force:true }
-      );
-
-      if(data.type === 'video'){
-        showScreen('incoming-video');
-      }else{
-        showScreen('incoming-audio');
-      }
-
     }
 
     function replaceNavState(type, data = {}) {

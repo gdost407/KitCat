@@ -1,6 +1,6 @@
 // const CACHE_NAME = "kitcat-v6";
-const CACHE_STATIC = "kitcat-static-v2";
-const CACHE_DYNAMIC = "kitcat-dynamic-v2";
+const CACHE_STATIC = "kitcat-static-v3";
+const CACHE_DYNAMIC = "kitcat-dynamic-v3";
 
 const ASSETS = [
   "/",
@@ -44,9 +44,17 @@ self.addEventListener("fetch", (e) => {
   if (url.origin !== location.origin) return;
   if (e.request.mode === "navigate") {
     e.respondWith(
-      caches.match("/index.html").then((cached) => {
-        return cached || fetch(e.request);
-      })
+      fetch(e.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_STATIC).then((cache) => {
+            cache.put("/index.html", copy);
+          });
+          return response;
+        })
+        .catch(() => {
+          return caches.match("/index.html");
+        })
     );
     return;
   }

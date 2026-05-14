@@ -1,6 +1,6 @@
 // const CACHE_NAME = "kitcat-v6";
-const CACHE_STATIC = "kitcat-static-v1";
-const CACHE_DYNAMIC = "kitcat-dynamic-v1";
+const CACHE_STATIC = "kitcat-static-v2";
+const CACHE_DYNAMIC = "kitcat-dynamic-v2";
 
 const ASSETS = [
   "/",

@@ -843,7 +843,8 @@
                 <div class="msg-row recv"><div class="msg-avatar"><img src="https://i.pravatar.cc/30?img=12" alt=""></div><div><div class="msg-bubble">Kahi nahi</div><div class="msg-time">9:33pm</div></div><button class="msg-copy">📋</button></div>
               </div>
               <div class="chat-input-wrap">
-                <button class="emoji-btn">😊</button>
+                <button class="emoji-btn" id="emojiBtn">😊</button>
+                <div id="emojiPicker" class="emoji-picker hidden"></div>
                 <input class="chat-input" id="msgInput" type="text" placeholder="Type a cat message . . .." onkeydown="if(event.key==='Enter')sendMsg()">
                 <button class="send-btn" onclick="sendMsg()"><svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
               </div>
@@ -1195,6 +1196,50 @@
     </div><!-- .app -->
   </div><!-- #chatApp -->
   <style>
+    .emoji-picker{
+      position:absolute;
+      bottom:60px;
+      left:10px;
+      width:340px;
+      max-height:220px;
+      overflow-y:auto;
+      background:#fff;
+      border:1px solid #ddd;
+      border-radius:12px;
+      padding:10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.15);
+      z-index:9999;
+    }
+
+    .emoji-category-title{
+      width:100%;
+      font-size:13px;
+      font-weight:700;
+      color:#7b2fbf;
+      margin:10px 0 4px;
+      padding-bottom:4px;
+      border-bottom:1px solid #eee;
+      position:sticky;
+      top:-10px;
+      background:#fff;
+    }
+
+    .emoji-picker.hidden{
+      display:none;
+    }
+
+    .emoji-item{
+      cursor:pointer;
+      font-size:22px;
+      transition:0.2s;
+    }
+
+    .emoji-item:hover{
+      transform:scale(1.2);
+    }
     .msg-menu {
       position: fixed;
       z-index: 999;
@@ -1508,6 +1553,7 @@
     </div>
   </div>
 
+  <script src="assets/emoji.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";

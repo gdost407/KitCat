@@ -659,6 +659,103 @@
     .notif-acc:hover { opacity:0.9; }
 
   </style>
+  <style>
+    /* ══════════════════ DARK MODE ══════════════════ */
+    body.dark-mode .contact-panel,
+    body.dark-mode #userDetailPanel,
+    body.dark-mode .chat-header,
+    body.dark-mode .chat-input-wrap,
+    body.dark-mode #addSection,
+    body.dark-mode #requestSection,
+    body.dark-mode #profileSection,
+    body.dark-mode #settingsSection,
+    body.dark-mode #helpSection,
+    body.dark-mode #welcomeScreen {
+      background: #1a1a2e;
+    }
+    body.dark-mode .contact-panel { border-right-color: #2d2050; }
+    body.dark-mode .contact-header { border-bottom-color: #2d2050; }
+    body.dark-mode .contact-header h2 { color: #e8e0f0; }
+    body.dark-mode .search-box { background: #2a2040; }
+    body.dark-mode .search-box input { color: #e8e0f0; }
+    body.dark-mode .contact-item:hover { background: #241a38; }
+    body.dark-mode .contact-item.active { background: #2e1e50; border-left-color: #9b4ddb; }
+    body.dark-mode .contact-name { color: #e8e0f0; }
+    body.dark-mode .chat-header { border-bottom-color: #2d2050; }
+    body.dark-mode .chat-header-name { color: #e8e0f0; }
+    body.dark-mode .chat-input-wrap { border-top-color: #2d2050; }
+    body.dark-mode .chat-input { background: #2a2040; color: #e8e0f0; }
+    body.dark-mode .ud-divider { background: #2d2050; }
+    body.dark-mode .ud-name { color: #e8e0f0; }
+    body.dark-mode .sec-header {
+      background: #1a1a2e;
+      border-bottom-color: #2d2050;
+    }
+    body.dark-mode .sec-title { color: #e8e0f0; }
+    body.dark-mode .settings-body { background: #1a1a2e; }
+    body.dark-mode .settings-card {
+      background: #211635;
+      border-color: #2d2050;
+    }
+    body.dark-mode .settings-card-danger { border-color: #4a1a1a; }
+    body.dark-mode .setting-row:active { background: #2a1a45; }
+    body.dark-mode .danger-row:hover { background: #2a1218; }
+    body.dark-mode .setting-title { color: #e8e0f0; }
+    body.dark-mode .setting-divider { background: #2d2050; }
+    body.dark-mode .si-purple { background: #2d1a4a; }
+    body.dark-mode .si-pink   { background: #2a1525; }
+    body.dark-mode .si-blue   { background: #0d1a2e; }
+    body.dark-mode .si-green  { background: #0d2018; }
+    body.dark-mode .si-orange { background: #2a1a0d; }
+    body.dark-mode .si-violet { background: #1e1030; }
+    body.dark-mode .si-red    { background: #2a0d0d; }
+    body.dark-mode .toggle-track { background: #3d3060; }
+    body.dark-mode .add-search-box {
+      background: #211635;
+      border-color: #3d3060;
+    }
+    body.dark-mode .add-search-box input { color: #e8e0f0; }
+    body.dark-mode .add-user-card {
+      background: #211635;
+      border-color: #2d2050;
+    }
+    body.dark-mode .add-user-card:hover { border-color: #7b2fbf; }
+    body.dark-mode .add-user-name { color: #e8e0f0; }
+    body.dark-mode .req-card {
+      background: #211635;
+      border-color: #2d2050;
+    }
+    body.dark-mode .req-name { color: #e8e0f0; }
+    body.dark-mode .profile-cover { background: linear-gradient(135deg,#3a0a70,#7b2fbf,#5a2060); }
+    body.dark-mode .field-input {
+      color: #e8e0f0;
+      border-bottom-color: #3d3060;
+    }
+    body.dark-mode .field-textarea {
+      background: #211635;
+      border-color: #3d3060;
+      color: #e8e0f0;
+    }
+    body.dark-mode .emoji-picker,
+    body.dark-mode .emoji-category-title { background: #1a1a2e; border-color: #2d2050; }
+    body.dark-mode .msg-menu {
+      background: #211635;
+      border-color: #2d2050;
+    }
+    body.dark-mode .msg-menu-item:hover { background: #2d1a4a; }
+    body.dark-mode .toast { background: #211635; }
+    body.dark-mode .toast-header { background: #2d1a4a !important; border-bottom-color: #3d3060; }
+    body.dark-mode .btn-attach { background: #2d1a4a; }
+    body.dark-mode .msg-copy { background: rgba(30,20,50,0.8); }
+    body.dark-mode #welcomeScreen h1 { color: #c084fc; }
+    body.dark-mode #welcomeScreen h3 { color: #f9a8d4; }
+    body.dark-mode .lock-modal { background: #1a1a2e; }
+    body.dark-mode .pin-key { background: #2a2040; color: #e8e0f0; }
+    body.dark-mode .pin-key:hover { background: #3d3060; }
+    body.dark-mode .pin-key-clear { background: #2a1525; }
+    body.dark-mode .pin-key-del { background: #211635; color: #9d8fb0; }
+    body.dark-mode .pin-dot { border-color: #5a4080; }
+  </style>
 </head>
 <body>
  
@@ -734,6 +831,10 @@
           Request
         </button>
         <div class="nav-spacer"></div>
+        <button class="nav-item" id="nav-help" onclick="setSection('help')">
+          <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Help
+        </button>
         <button class="nav-item" id="nav-profile" onclick="setSection('profile')">
           <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           Profile
@@ -1186,12 +1287,126 @@
             <!-- App version -->
             <div class="settings-version">
               <span>🐱 KitCat</span>
-              <span>v6.0.7 · Made with ♥ by ASG</span>
+              <span>v7.0.0 · Made with ♥ by ASG</span>
             </div>
  
           </div><!-- .settings-body -->
         </div>
     
+        <!-- HELP — full main-area -->
+        <div id="helpSection" style="position:absolute;inset:0;display:none;flex-direction:column;background:#f8f9fa;overflow:hidden">
+          <div class="sec-header">
+            <button class="sec-back-btn" onclick="goBackToList()">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div class="sec-title-wrap">
+              <div class="sec-title" id="helpSectionTitle">Help & Support</div>
+              <div class="sec-sub" id="helpSectionSub">How can we help you today?</div>
+            </div>
+          </div>
+
+          <!-- HELP HOME (menu list) -->
+          <div id="helpHome" class="settings-body" style="display:flex">
+            <div class="settings-group">
+              <div class="settings-group-label">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Help Center
+              </div>
+              <div class="settings-card">
+                <div class="setting-row" style="cursor:pointer" onclick="openHelpPage('faq')">
+                  <div class="setting-icon si-purple">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  </div>
+                  <div class="setting-info">
+                    <div class="setting-title">FAQ</div>
+                    <div class="setting-desc">Frequently asked questions</div>
+                  </div>
+                  <div class="setting-chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+                </div>
+                <div class="setting-divider"></div>
+                <div class="setting-row" style="cursor:pointer" onclick="openHelpPage('help')">
+                  <div class="setting-icon si-blue">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.99 3 7 7 0 0 0 21 12.79z" style="display:none"/><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                  </div>
+                  <div class="setting-info">
+                    <div class="setting-title">Help Guide</div>
+                    <div class="setting-desc">Learn how to use KitCat</div>
+                  </div>
+                  <div class="setting-chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+                </div>
+                <div class="setting-divider"></div>
+                <div class="setting-row" style="cursor:pointer" onclick="openHelpPage('support')">
+                  <div class="setting-icon si-green">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <div class="setting-info">
+                    <div class="setting-title">Contact Support</div>
+                    <div class="setting-desc">Get in touch with our team</div>
+                  </div>
+                  <div class="setting-chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+                </div>
+              </div>
+            </div>
+            <div class="settings-group">
+              <div class="settings-group-label">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Legal
+              </div>
+              <div class="settings-card">
+                <div class="setting-row" style="cursor:pointer" onclick="openHelpPage('privacy')">
+                  <div class="setting-icon si-violet">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </div>
+                  <div class="setting-info">
+                    <div class="setting-title">Privacy Policy</div>
+                    <div class="setting-desc">How we handle your data</div>
+                  </div>
+                  <div class="setting-chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+                </div>
+                <div class="setting-divider"></div>
+                <div class="setting-row" style="cursor:pointer" onclick="openHelpPage('terms')">
+                  <div class="setting-icon si-pink">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                  </div>
+                  <div class="setting-info">
+                    <div class="setting-title">Terms & Conditions</div>
+                    <div class="setting-desc">Rules for using KitCat</div>
+                  </div>
+                  <div class="setting-chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+                </div>
+              </div>
+            </div>
+            <div class="settings-group">
+              <div class="settings-group-label" style="color:#ef4444">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Account Actions
+              </div>
+              <div class="settings-card settings-card-danger">
+                <div class="setting-row danger-row" onclick="openHelpPage('delete-account')">
+                  <div class="setting-icon si-red">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                  </div>
+                  <div class="setting-info">
+                    <div class="setting-title" style="color:#ef4444">Delete Account</div>
+                    <div class="setting-desc">Permanently remove your account</div>
+                  </div>
+                  <div class="setting-chevron" style="color:#ef4444"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+                </div>
+              </div>
+            </div>
+            <div class="settings-version"><span>🐱 KitCat</span><span>v7.0.0 · Made with ♥ by ASG</span></div>
+          </div>
+
+          <!-- HELP PAGE CONTENT (shown when a sub-page is opened) -->
+          <div id="helpPageContent" style="display:none;flex:1;overflow-y:auto;padding:24px 28px 40px;flex-direction:column;gap:16px">
+            <button onclick="closeHelpPage()" style="align-self:flex-start;display:flex;align-items:center;gap:6px;background:#f3e8ff;border:none;border-radius:20px;padding:8px 16px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--purple-main);cursor:pointer;margin-bottom:4px">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+              Back
+            </button>
+            <div id="helpPageInner"></div>
+          </div>
+        </div>
+
       </div><!-- .main-area -->
     </div><!-- .app -->
   </div><!-- #chatApp -->
@@ -3147,6 +3362,7 @@
         state.type === 'request' ||
         state.type === 'profile' ||
         state.type === 'settings' ||
+        state.type === 'help' ||
         state.type === 'contact'
       ) {
         setSection(state.type, false);
@@ -3999,7 +4215,7 @@
     function setSection(section, addHistory = true) {
       APP.activeSection = section;
 
-      ['contact','add','request','profile','settings'].forEach(s=>{
+      ['contact','add','request','profile','settings','help'].forEach(s=>{
         document.getElementById('nav-'+s)?.classList.remove('active');
       });
 
@@ -4046,6 +4262,16 @@
         APP.currentChatUser = null;
         syncActiveChatWithServiceWorker();
         document.getElementById('settingsSection').style.display = 'flex';
+      }
+
+      if (section === 'help') {
+        APP.activeView = 'help';
+        APP.activeChatId = null;
+        APP.currentChatUser = null;
+        syncActiveChatWithServiceWorker();
+        document.getElementById('helpSection').style.display = 'flex';
+        // Always show home when entering via nav
+        closeHelpPage();
       }
 
       if (window.innerWidth <= 768) {
@@ -4422,7 +4648,7 @@
     
     /* ─── Helpers ─── */
     function hideAllPanels() {
-      ['welcomeScreen','chatWrapper','addSection','requestSection','profileSection', 'settingsSection'].forEach(id => {
+      ['welcomeScreen','chatWrapper','addSection','requestSection','profileSection', 'settingsSection', 'helpSection'].forEach(id => {
         const el = document.getElementById(id);
         el.style.display = 'none';
       });
@@ -4485,15 +4711,33 @@
 
     function applyTheme() {
       const theme = APP.settings.theme;
+      const r = document.documentElement;
 
       if (theme === "dark") {
-        document.documentElement.style.setProperty("--chat-area-bg", "#1e1e1e");
-        document.documentElement.style.setProperty("--text-dark", "#ffffff");
-        document.body.style.background = "#121212";
+        // Core color overrides
+        r.style.setProperty("--sidebar-bg", "#1a0033");
+        r.style.setProperty("--chat-area-bg", "#1e1e2e");
+        r.style.setProperty("--text-dark", "#e8e0f0");
+        r.style.setProperty("--text-muted", "#9d8fb0");
+        r.style.setProperty("--recv-bg", "#2a2040");
+        r.style.setProperty("--recv-border", "#3d3060");
+        r.style.setProperty("--sent-bg", "#7b2fbf");
+        r.style.setProperty("--pink-bg", "#2a1530");
+        // Body & panel backgrounds
+        document.body.style.background = "#121218";
+        document.body.classList.add("dark-mode");
       } else {
-        document.documentElement.style.setProperty("--chat-area-bg", "#fce4ec");
-        document.documentElement.style.setProperty("--text-dark", "#1a1a2e");
+        // Restore all light mode values
+        r.style.setProperty("--sidebar-bg", "#5F369F");
+        r.style.setProperty("--chat-area-bg", "#fce4ec");
+        r.style.setProperty("--text-dark", "#1a1a2e");
+        r.style.setProperty("--text-muted", "#7c6b8a");
+        r.style.setProperty("--recv-bg", "#fff");
+        r.style.setProperty("--recv-border", "#e8d5f5");
+        r.style.setProperty("--sent-bg", "#9b4ddb");
+        r.style.setProperty("--pink-bg", "#fce4ec");
         document.body.style.background = "#ffffff";
+        document.body.classList.remove("dark-mode");
       }
     }
 
@@ -4542,7 +4786,7 @@
     /* ─── SECTION SWITCHING ─── */
     function showSection(sec) {
       // Update sidebar nav active
-      ['contact','add','request','profile'].forEach(s=>document.getElementById('nav-'+s)?.classList.remove('active'));
+      ['contact','add','request','profile','help'].forEach(s=>document.getElementById('nav-'+s)?.classList.remove('active'));
       document.getElementById('nav-'+sec)?.classList.add('active');
   
       hideAllPanels();
@@ -4796,6 +5040,170 @@
   
     function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   
+    /* ─── HELP PAGES ─── */
+    const HELP_PAGES = {
+      faq: {
+        title: 'FAQ',
+        sub: 'Frequently Asked Questions',
+        content: `
+          <div style="display:flex;flex-direction:column;gap:14px">
+            ${[
+              ['How do I add a friend?', 'Go to the Add section from the sidebar, search by name or username, and tap "Add Friend" to send a request.'],
+              ['How do I delete a message?', 'Hover (or long-press on mobile) over any message to reveal action buttons. You can delete for yourself or for everyone.'],
+              ['Can I change my profile picture?', 'Yes! Go to My Profile from the sidebar, then tap on your avatar to upload a new photo.'],
+              ['How does dark mode work?', 'Open Settings → Appearance → toggle Dark Mode. Your preference is saved automatically.'],
+              ['Is KitCat free to use?', 'Yes, KitCat is completely free. No hidden charges, no ads.'],
+              ['Can I use KitCat on multiple devices?', 'Yes, your account syncs across all devices where you log in with the same Google account.'],
+              ['How do I make a voice or video call?', 'Open a chat, then tap the phone or video icon in the top right corner of the chat header.'],
+            ].map(([q, a]) => `
+              <div style="background:#fff;border-radius:16px;border:1.5px solid #f0e6fa;padding:16px 18px">
+                <div style="font-size:14px;font-weight:800;color:var(--purple-dark);margin-bottom:6px">${q}</div>
+                <div style="font-size:13px;font-weight:600;color:var(--text-muted);line-height:1.6">${a}</div>
+              </div>
+            `).join('')}
+          </div>`
+      },
+      help: {
+        title: 'Help Guide',
+        sub: 'Learn how to use KitCat',
+        content: `
+          <div style="display:flex;flex-direction:column;gap:14px">
+            ${[
+              ['💬', 'Chats', 'The Contacts tab shows all your active conversations. Tap any contact to open the chat. Unread messages show a red badge.'],
+              ['➕', 'Adding Friends', 'Use the Add tab to search for users by name or username and send a friend request.'],
+              ['🔔', 'Requests', 'The Requests tab shows incoming friend requests. Accept or decline with one tap.'],
+              ['👤', 'My Profile', 'Edit your name, bio, profile picture, phone number, date of birth, and city in the Profile tab.'],
+              ['⚙️', 'Settings', 'Customize dark mode, chat background, notification sounds, privacy, and more in Settings.'],
+              ['📞', 'Calling', 'Open any chat and use the phone icon for voice calls or the video icon for video calls.'],
+              ['🔒', 'Privacy', 'Your messages are stored securely on Firebase. You can control your online status and read receipts in Settings → Privacy.'],
+            ].map(([emoji, title, desc]) => `
+              <div style="background:#fff;border-radius:16px;border:1.5px solid #f0e6fa;padding:16px 18px;display:flex;gap:14px;align-items:flex-start">
+                <div style="font-size:26px;flex-shrink:0;line-height:1.2">${emoji}</div>
+                <div>
+                  <div style="font-size:14px;font-weight:800;color:var(--purple-dark);margin-bottom:4px">${title}</div>
+                  <div style="font-size:13px;font-weight:600;color:var(--text-muted);line-height:1.6">${desc}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>`
+      },
+      support: {
+        title: 'Contact Support',
+        sub: 'We\'re here to help',
+        content: `
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="background:#fff;border-radius:16px;border:1.5px solid #f0e6fa;padding:20px;text-align:center">
+              <div style="font-size:48px;margin-bottom:12px">💌</div>
+              <div style="font-size:16px;font-weight:800;color:var(--purple-dark);margin-bottom:6px">Email Support</div>
+              <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:16px">Reach out and we'll respond within 24 hours</div>
+              <a href="mailto:info@aniketgolhar.in" style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:var(--purple-main);color:#fff;border-radius:20px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;text-decoration:none">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Send Email
+              </a>
+            </div>
+            <div style="background:#fff;border-radius:16px;border:1.5px solid #f0e6fa;padding:20px;text-align:center">
+              <div style="font-size:48px;margin-bottom:12px">🌐</div>
+              <div style="font-size:16px;font-weight:800;color:var(--purple-dark);margin-bottom:6px">Visit Website</div>
+              <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:16px">Check out our developer's portfolio for more info</div>
+              <a href="https://aniketgolhar.in" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:#f3e8ff;color:var(--purple-main);border-radius:20px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;text-decoration:none">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                aniketgolhar.in
+              </a>
+            </div>
+          </div>`
+      },
+      privacy: {
+        title: 'Privacy Policy',
+        sub: 'How we handle your data',
+        content: `
+          <div style="display:flex;flex-direction:column;gap:14px">
+            ${[
+              ['Data We Collect', 'KitCat collects your Google account information (name, email, profile photo) when you sign in. We also store messages, friend lists, and notification tokens to provide the service.'],
+              ['How We Use Your Data', 'Your data is used solely to operate KitCat. We do not sell, share, or monetize your personal information with any third parties.'],
+              ['Data Storage', 'All data is stored securely on Google Firebase infrastructure with industry-standard encryption at rest and in transit.'],
+              ['Messages', 'Messages are stored in Firestore. You can delete chat history at any time from within the app.'],
+              ['Notifications', 'Push notification tokens are used only to deliver your messages. You can disable notifications in Settings at any time.'],
+              ['Account Deletion', 'You may request full deletion of your account and associated data at any time from Help → Delete Account.'],
+              ['Contact', 'For privacy concerns, contact us at info@aniketgolhar.in.'],
+            ].map(([title, body]) => `
+              <div style="background:#fff;border-radius:16px;border:1.5px solid #f0e6fa;padding:16px 18px">
+                <div style="font-size:13px;font-weight:800;color:var(--purple-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${title}</div>
+                <div style="font-size:13px;font-weight:600;color:var(--text-muted);line-height:1.7">${body}</div>
+              </div>
+            `).join('')}
+            <div style="font-size:11px;color:#c4b5d4;font-weight:700;text-align:center;margin-top:4px">Last updated: May 2025 · KitCat by ASG</div>
+          </div>`
+      },
+      terms: {
+        title: 'Terms & Conditions',
+        sub: 'Rules for using KitCat',
+        content: `
+          <div style="display:flex;flex-direction:column;gap:14px">
+            ${[
+              ['Acceptance', 'By using KitCat, you agree to these Terms. If you do not agree, please do not use the app.'],
+              ['Eligibility', 'You must be at least 13 years old to use KitCat. By signing in, you confirm you meet this requirement.'],
+              ['Acceptable Use', 'You agree not to use KitCat for harassment, spam, illegal activity, impersonation, or distribution of harmful content.'],
+              ['Content Ownership', 'You retain ownership of content you create. By posting, you grant KitCat a limited license to store and display it within the app.'],
+              ['Account Termination', 'We reserve the right to suspend or terminate accounts that violate these terms without prior notice.'],
+              ['Disclaimer', 'KitCat is provided "as is" without warranties of any kind. We are not liable for data loss or service interruptions.'],
+              ['Changes to Terms', 'We may update these terms at any time. Continued use of the app after changes constitutes acceptance of the new terms.'],
+            ].map(([title, body]) => `
+              <div style="background:#fff;border-radius:16px;border:1.5px solid #f0e6fa;padding:16px 18px">
+                <div style="font-size:13px;font-weight:800;color:var(--purple-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${title}</div>
+                <div style="font-size:13px;font-weight:600;color:var(--text-muted);line-height:1.7">${body}</div>
+              </div>
+            `).join('')}
+            <div style="font-size:11px;color:#c4b5d4;font-weight:700;text-align:center;margin-top:4px">Last updated: May 2025 · KitCat by ASG</div>
+          </div>`
+      },
+      'delete-account': {
+        title: 'Delete Account',
+        sub: 'Permanently remove your account',
+        content: `
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="background:#fff5f5;border-radius:16px;border:1.5px solid #fecaca;padding:18px">
+              <div style="font-size:32px;text-align:center;margin-bottom:10px">⚠️</div>
+              <div style="font-size:15px;font-weight:800;color:#dc2626;text-align:center;margin-bottom:8px">This Action Is Irreversible</div>
+              <div style="font-size:13px;font-weight:600;color:#7f1d1d;line-height:1.7;text-align:center">Deleting your account will permanently remove all your messages, contacts, and profile data. This cannot be undone.</div>
+            </div>
+            <div style="background:#fff;border-radius:16px;border:1.5px solid #f0e6fa;padding:16px 18px">
+              <div style="font-size:13px;font-weight:800;color:var(--purple-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">What gets deleted</div>
+              ${['Your profile (name, photo, bio)', 'All your chat messages', 'Your friend list and connections', 'Notification tokens', 'All account settings'].map(item => `
+                <div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;font-weight:600;color:var(--text-muted)">
+                  <svg width="14" height="14" fill="none" stroke="#ef4444" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  ${item}
+                </div>
+              `).join('')}
+            </div>
+            <div style="background:#fff;border-radius:16px;border:1.5px solid #f0e6fa;padding:16px 18px">
+              <div style="font-size:13px;font-weight:800;color:var(--purple-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">How to delete</div>
+              <div style="font-size:13px;font-weight:600;color:var(--text-muted);line-height:1.7">To request full account deletion, please email us at <strong style="color:var(--purple-main)">info@aniketgolhar.in</strong> with the subject "Account Deletion Request" from your registered email address. We will process your request within 7 business days.</div>
+            </div>
+            <a href="mailto:info@aniketgolhar.in?subject=Account Deletion Request" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;background:#fee2e2;color:#dc2626;border-radius:14px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;text-decoration:none">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              Request Account Deletion
+            </a>
+          </div>`
+      }
+    };
+
+    window.openHelpPage = function(page) {
+      const data = HELP_PAGES[page];
+      if (!data) return;
+      document.getElementById('helpSectionTitle').textContent = data.title;
+      document.getElementById('helpSectionSub').textContent = data.sub;
+      document.getElementById('helpPageInner').innerHTML = data.content;
+      document.getElementById('helpHome').style.display = 'none';
+      document.getElementById('helpPageContent').style.display = 'flex';
+    };
+
+    window.closeHelpPage = function() {
+      document.getElementById('helpSectionTitle').textContent = 'Help & Support';
+      document.getElementById('helpSectionSub').textContent = 'How can we help you today?';
+      document.getElementById('helpHome').style.display = 'flex';
+      document.getElementById('helpPageContent').style.display = 'none';
+    };
+
     window.addEventListener('load', () => {
       setSection('contact', false);
       replaceNavState('contact');

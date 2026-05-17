@@ -755,6 +755,33 @@
     body.dark-mode .pin-key-clear { background: #2a1525; }
     body.dark-mode .pin-key-del { background: #211635; color: #9d8fb0; }
     body.dark-mode .pin-dot { border-color: #5a4080; }
+
+    /* ── TYPING INDICATOR ── */
+    .typing-wrap{display:flex;align-items:center;gap:3px;height:16px}
+    .typing-dot{width:5px;height:5px;border-radius:50%;background:#9b4ddb;display:inline-block;animation:typeBounce 1.2s ease-in-out infinite}
+    .typing-dot:nth-child(1){animation-delay:0s}
+    .typing-dot:nth-child(2){animation-delay:.2s}
+    .typing-dot:nth-child(3){animation-delay:.4s}
+    @keyframes typeBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+    .typing-label{font-size:11px;font-weight:700;color:#9b4ddb;margin-left:3px}
+
+    /* ── BLOCK USERS MODAL ── */
+    .block-overlay{position:fixed;inset:0;background:rgba(42,0,84,.45);backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+    .block-overlay.show{opacity:1;pointer-events:all}
+    .block-modal{background:#fff;border-radius:24px;padding:24px 20px;width:min(380px,92vw);max-height:75vh;display:flex;flex-direction:column;gap:12px;box-shadow:0 24px 80px rgba(0,0,0,.25);transform:scale(.92);transition:transform .3s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
+    .block-overlay.show .block-modal{transform:scale(1)}
+    .block-modal-head{display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .block-modal-title{font-size:18px;font-weight:800;color:var(--purple-dark)}
+    .block-modal-close{width:32px;height:32px;border-radius:50%;border:none;background:#f3e8ff;color:var(--purple-main);cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .block-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:50px}
+    .block-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff5f5;border:1.5px solid #fecaca;border-radius:14px}
+    .block-item-info{flex:1;min-width:0}
+    .block-item-name{font-size:14px;font-weight:700;color:var(--text-dark)}
+    .block-item-meta{font-size:11px;color:var(--text-muted);font-weight:600}
+    .unblock-btn{padding:6px 14px;border-radius:20px;border:none;background:#fee2e2;color:#dc2626;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
+    .unblock-btn:hover{background:#fecaca}
+    body.dark-mode .block-modal{background:#1a1a2e}
+    body.dark-mode .block-item{background:#2a1218;border-color:#4a1a1a}
   </style>
 </head>
 <body>
@@ -921,6 +948,12 @@
                   <div class="avatar" id="chatHeaderAvatar" style="width:40px;height:40px;font-size:14px;flex-shrink:0"></div>
                   <div>
                     <div class="chat-header-name" id="chatHeaderName">—</div>
+                    <div id="typingRow" style="display:none" class="typing-wrap">
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot"></span>
+                      <span class="typing-label">typing...</span>
+                    </div>
                     <div class="chat-header-status" id="chatHeaderStatus">Online</div>
                   </div>
                 </div>
@@ -946,7 +979,7 @@
               <div class="chat-input-wrap">
                 <button class="emoji-btn" id="emojiBtn">😊</button>
                 <div id="emojiPicker" class="emoji-picker hidden"></div>
-                <input class="chat-input" id="msgInput" type="text" placeholder="Type a cat message . . .." onkeydown="if(event.key==='Enter')sendMsg()">
+                <input class="chat-input" id="msgInput" type="text" placeholder="Type a cat message . . .." onkeydown="if(event.key==='Enter')sendMsg()" onkeyup="sendTypingSignal()">
                 <button class="send-btn" onclick="sendMsg()"><svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
               </div>
             </div>
@@ -1111,7 +1144,7 @@
                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
                   </div>
                   <div class="setting-info">
-                    <div class="setting-title">Chat Bubble Color (coming soon...)</div>
+                    <div class="setting-title">Chat Bubble Color</div>
                     <div class="setting-desc">Pick your sent message color</div>
                   </div>
                   <div class="color-swatch-row">
@@ -1166,7 +1199,7 @@
                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/><path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/><path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z"/><path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z"/><path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z"/><path d="M15.5 19H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"/><path d="M10 9.5C10 8.67 9.33 8 8.5 8h-5C2.67 8 2 8.67 2 9.5S2.67 11 3.5 11h5c.83 0 1.5-.67 1.5-1.5z"/><path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5 7.67 5 8.5 5z"/></svg>
                   </div>
                   <div class="setting-info">
-                    <div class="setting-title">Vibration (comning soon...)</div>
+                    <div class="setting-title">Vibration</div>
                     <div class="setting-desc">Haptic feedback on messages</div>
                   </div>
                   <label class="toggle-switch">
@@ -1189,11 +1222,11 @@
                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   </div>
                   <div class="setting-info">
-                    <div class="setting-title">Online Status (comning soon...)</div>
+                    <div class="setting-title">Online Status</div>
                     <div class="setting-desc">Show when you're active</div>
                   </div>
                   <label class="toggle-switch">
-                    <input type="checkbox" id="setting-online-status" checked>
+                    <input type="checkbox" id="setting-online-status" checked onchange="handleOnlineStatusToggle(this)">
                     <span class="toggle-track"><span class="toggle-thumb"></span></span>
                   </label>
                 </div>
@@ -1203,7 +1236,7 @@
                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                   </div>
                   <div class="setting-info">
-                    <div class="setting-title">Read Receipts (comning soon...)</div>
+                    <div class="setting-title">Read Receipts</div>
                     <div class="setting-desc">Let others know you've read</div>
                   </div>
                   <label class="toggle-switch">
@@ -1247,7 +1280,7 @@
                   </div>
                 </div>
                 <div class="setting-divider"></div>
-                <div class="setting-row" style="cursor:pointer">
+                <div class="setting-row" style="cursor:pointer" onclick="openBlockedUsersModal()">
                   <div class="setting-icon si-green">
                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   </div>
@@ -1287,7 +1320,7 @@
             <!-- App version -->
             <div class="settings-version">
               <span>🐱 KitCat</span>
-              <span>v7.0.0 · Made with ♥ by ASG</span>
+              <span>v7.0.5 · Made with ♥ by ASG</span>
             </div>
  
           </div><!-- .settings-body -->
@@ -1394,7 +1427,7 @@
                 </div>
               </div>
             </div>
-            <div class="settings-version"><span>🐱 KitCat</span><span>v7.0.0 · Made with ♥ by ASG</span></div>
+            <div class="settings-version"><span>🐱 KitCat</span><span>v7.0.5 · Made with ♥ by ASG</span></div>
           </div>
 
           <!-- HELP PAGE CONTENT (shown when a sub-page is opened) -->
@@ -1768,6 +1801,24 @@
     </div>
   </div>
 
+  <!-- BLOCK USERS MODAL -->
+  <div class="block-overlay" id="blockModal">
+    <div class="block-modal">
+      <div class="block-modal-head">
+        <div class="block-modal-title">🚫 Blocked Users</div>
+        <button class="block-modal-close" onclick="document.getElementById('blockModal').classList.remove('show')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="block-list" id="blockList">
+        <div class="empty-state" style="padding:20px 0">
+          <div class="ei" style="font-size:36px;opacity:.3">🚫</div>
+          <p>No blocked users</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="assets/emoji.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
@@ -1816,7 +1867,11 @@
       sound: "default",
       chatBg: "",
       appLock: false,
-      lockPassword: ""
+      lockPassword: "",
+      vibration: true,
+      onlineStatus: true,
+      bubbleColor: "#9b4ddb",
+      blockedUsers: []
     };
     
     
@@ -1986,7 +2041,7 @@
           }
 
           await updateDoc(doc(FB.db, "users", user.uid), {
-            status: "Online"
+            status: APP.settings?.onlineStatus === false ? "Hidden" : "Online"
           });
           listenIncomingCalls();
           enterApp(); // 👈 auto enter
@@ -2041,7 +2096,8 @@
     // Logout function
     window.doLogout = async function () {
       await updateDoc(doc(FB.db, "users", APP.user.uid), {
-        status: "Offline"
+        status: "Offline",
+        lastSeen: serverTimestamp()
       });
 
       Object.keys(APP.listeners).forEach(key => {
@@ -2072,7 +2128,8 @@
     window.addEventListener("beforeunload", async () => {
       if (APP.user?.uid) {
         await updateDoc(doc(FB.db, "users", APP.user.uid), {
-          status: "Offline"
+          status: "Offline",
+          lastSeen: serverTimestamp()
         });
       }
     });
@@ -2880,11 +2937,23 @@
         if (!docSnap.exists()) return;
 
         const data = docSnap.data();
-
         const el = document.getElementById('chatHeaderStatus');
+        if (!el) return;
 
-        el.textContent = data.status || "Offline";
-        el.style.color = data.status === "Online" ? "#22c55e" : "#a78bfa";
+        if (data.status === "Hidden") {
+          el.textContent = '—';
+          el.style.color = '#a78bfa';
+          return;
+        }
+
+        if (data.status === "Online") {
+          el.textContent = 'Online';
+          el.style.color = '#22c55e';
+        } else {
+          const ts = data.lastSeen || data.updatedAt || null;
+          el.textContent = formatLastSeen(ts);
+          el.style.color = '#a78bfa';
+        }
       });
     };
 
@@ -4174,6 +4243,10 @@
         APP.sound.currentTime = 0;
         APP.sound.play().catch(() => {});
       }
+
+      if (APP.settings?.vibration && "vibrate" in navigator) {
+        navigator.vibrate([80, 40, 80]);
+      }
       
       if (!options.sticky) {
         setTimeout(() => {
@@ -4406,6 +4479,7 @@
       // ✅ load chat
       openChatById(chatId);
       listenUserStatus(chat.otherUserId);
+      listenTyping(chatId, chat.otherUserId);
       pushNavState('chat', { chatId: chatId });
     }
 
@@ -4606,6 +4680,9 @@
         <div class="msg-menu-item danger" onclick="deleteChatForEveryone('${chatId}')">
           Delete chat for everyone
         </div>
+        <div class="msg-menu-item danger" onclick="blockCurrentChatUser(); closeMsgMenu()" style="display: none;">
+          🚫 Block User
+        </div>
       `;
 
       content.innerHTML = html;
@@ -4764,23 +4841,164 @@
       }
     }
 
-    function applySettings() {
-      // Theme
-      applyTheme();
-      // Chat background
-      applyChatBackground();
-      // Sound
-      applySound();
-      // 🔥 Sync UI toggles with saved settings
-      document.getElementById("setting-theme").checked =
-        APP.settings.theme === "dark";
-
-      document.getElementById("setting-notifications").checked =
-        APP.settings.notifications === true;
-
-      document.getElementById("setting-sound").checked =
-        APP.settings.sound !== "off";
+    function applyBubbleColor() {
+      const color = APP.settings.bubbleColor || '#9b4ddb';
+      document.documentElement.style.setProperty('--sent-bg', color);
+      // keep dark-mode override in sync: only apply in light mode
+      if (APP.settings.theme !== 'dark') {
+        document.documentElement.style.setProperty('--sent-bg', color);
+      }
+      // sync active swatch UI
+      document.querySelectorAll('.color-swatch').forEach(s => {
+        s.classList.toggle('active', s.dataset.color === color);
+      });
     }
+
+    function applySettings() {
+      applyTheme();
+      applyChatBackground();
+      applySound();
+      applyBubbleColor();
+
+      document.getElementById("setting-theme").checked        = APP.settings.theme === "dark";
+      document.getElementById("setting-notifications").checked = APP.settings.notifications !== false;
+      document.getElementById("setting-sound").checked        = APP.settings.sound !== "off";
+      document.getElementById("setting-vibration").checked    = APP.settings.vibration !== false;
+      document.getElementById("setting-online-status").checked = APP.settings.onlineStatus !== false;
+    }
+
+    /* ── CHAT BUBBLE COLOR ── */
+    window.setBubbleColor = function(el, color) {
+      updateSetting('bubbleColor', color);
+    };
+
+    /* ── VIBRATION ── */
+    window.handleVibrationToggle = function(el) {
+      updateSetting('vibration', el.checked);
+    };
+
+    /* ── ONLINE STATUS ── */
+    window.handleOnlineStatusToggle = async function(el) {
+      updateSetting('onlineStatus', el.checked);
+      if (APP.user?.uid) {
+        try {
+          await updateDoc(doc(FB.db, "users", APP.user.uid), {
+            status: el.checked ? "Online" : "Hidden"
+          });
+        } catch(e) { console.error("Online status error:", e); }
+      }
+    };
+
+    /* ── BLOCK USERS ── */
+    window.openBlockedUsersModal = function() {
+      renderBlockList();
+      document.getElementById('blockModal').classList.add('show');
+    };
+
+    window.blockUser = async function(userId, userName, userPhoto) {
+      const list = APP.settings.blockedUsers || [];
+      if (list.find(u => u.id === userId)) { showToast("Already blocked"); return; }
+      list.push({ id: userId, name: userName, photo: userPhoto || '' });
+      updateSetting('blockedUsers', list);
+      try {
+        await updateDoc(doc(FB.db, "users", APP.user.uid), {
+          blockedUsers: list.map(u => u.id)
+        });
+      } catch(e) {}
+      showToast(`${userName} blocked`);
+    };
+
+    window.unblockUser = async function(userId) {
+      let list = APP.settings.blockedUsers || [];
+      const found = list.find(u => u.id === userId);
+      list = list.filter(u => u.id !== userId);
+      updateSetting('blockedUsers', list);
+      try {
+        await updateDoc(doc(FB.db, "users", APP.user.uid), {
+          blockedUsers: list.map(u => u.id)
+        });
+      } catch(e) {}
+      showToast(`${found?.name || 'User'} unblocked`);
+      renderBlockList();
+    };
+
+    window.isBlocked = function(userId) {
+      return (APP.settings.blockedUsers || []).some(u => u.id === userId);
+    };
+
+    window.blockCurrentChatUser = function() {
+      const chat = APP.currentChatUser;
+      if (!chat) return;
+      if (isBlocked(chat.otherUserId)) { showToast("Already blocked"); return; }
+      blockUser(chat.otherUserId, chat.name, chat.photoURL || '');
+    };
+
+    function renderBlockList() {
+      const el = document.getElementById('blockList');
+      const list = APP.settings.blockedUsers || [];
+      if (!list.length) {
+        el.innerHTML = `<div class="empty-state" style="padding:20px 0"><div class="ei" style="font-size:36px;opacity:.3">🚫</div><p>No blocked users</p></div>`;
+        return;
+      }
+      el.innerHTML = list.map(u => `
+        <div class="block-item">
+          <div class="avatar" style="width:40px;height:40px;flex-shrink:0;background:linear-gradient(135deg,#a78bfa,#c084fc);font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;border-radius:45%;overflow:hidden">
+            ${u.photo ? `<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover">` : (u.name?.[0] || '?')}
+          </div>
+          <div class="block-item-info">
+            <div class="block-item-name">${u.name || 'Unknown'}</div>
+            <div class="block-item-meta">Blocked</div>
+          </div>
+          <button class="unblock-btn" onclick="unblockUser('${u.id}')">Unblock</button>
+        </div>
+      `).join('');
+    }
+
+    /* ── TYPING INDICATOR ── */
+    let _typingTimer = null;
+    let _typingUnsub = null;
+
+    window.sendTypingSignal = async function() {
+      if (!APP.activeChatId || !APP.user?.uid) return;
+      clearTimeout(_typingTimer);
+      try {
+        await updateDoc(doc(FB.db, "chats", APP.activeChatId), {
+          [`typing.${APP.user.uid}`]: true
+        });
+      } catch(e) {}
+      _typingTimer = setTimeout(async () => {
+        try {
+          await updateDoc(doc(FB.db, "chats", APP.activeChatId), {
+            [`typing.${APP.user.uid}`]: false
+          });
+        } catch(e) {}
+      }, 2000);
+    };
+
+    window.listenTyping = function(chatId, otherUserId) {
+      if (_typingUnsub) { _typingUnsub(); _typingUnsub = null; }
+      _typingUnsub = onSnapshot(doc(FB.db, "chats", chatId), (snap) => {
+        if (!snap.exists()) return;
+        const isTyping = snap.data()?.typing?.[otherUserId] === true;
+        const row    = document.getElementById('typingRow');
+        const status = document.getElementById('chatHeaderStatus');
+        if (!row || !status) return;
+        row.style.display    = isTyping ? 'flex' : 'none';
+        status.style.display = isTyping ? 'none' : '';
+      });
+    };
+
+    /* ── LAST SEEN FORMATTER ── */
+    window.formatLastSeen = function(ts) {
+      if (!ts) return 'Offline';
+      const ms   = ts.seconds ? ts.seconds * 1000 : Number(ts);
+      const diff = Date.now() - ms;
+      if (diff < 60000)    return 'Last seen just now';
+      if (diff < 3600000)  return `Last seen ${Math.floor(diff / 60000)}m ago`;
+      if (diff < 86400000) return `Last seen ${Math.floor(diff / 3600000)}h ago`;
+      const d = new Date(ms);
+      return `Last seen ${d.toLocaleDateString('en-IN', { day:'numeric', month:'short' })}`;
+    };
 
       
     /* ─── SECTION SWITCHING ─── */

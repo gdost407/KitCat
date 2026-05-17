@@ -4186,6 +4186,53 @@
         window.location.reload(true);
       }
     };
+
+    /* ── TYPING INDICATOR (needs Firestore imports — must stay in module) ── */
+    let _typingTimer = null;
+    let _typingUnsub = null;
+
+    window.sendTypingSignal = async function() {
+      if (!APP.activeChatId || !APP.user?.uid) return;
+      clearTimeout(_typingTimer);
+      try {
+        await updateDoc(doc(db, "chats", APP.activeChatId), {
+          [`typing.${APP.user.uid}`]: true
+        });
+      } catch(e) {}
+      _typingTimer = setTimeout(async () => {
+        try {
+          await updateDoc(doc(db, "chats", APP.activeChatId), {
+            [`typing.${APP.user.uid}`]: false
+          });
+        } catch(e) {}
+      }, 2000);
+    };
+
+    window.listenTyping = function(chatId, otherUserId) {
+      if (_typingUnsub) { _typingUnsub(); _typingUnsub = null; }
+      _typingUnsub = onSnapshot(doc(db, "chats", chatId), (snap) => {
+        if (!snap.exists()) return;
+        const isTyping = snap.data()?.typing?.[otherUserId] === true;
+        const row    = document.getElementById('typingRow');
+        const status = document.getElementById('chatHeaderStatus');
+        if (!row || !status) return;
+        row.style.display    = isTyping ? 'flex' : 'none';
+        status.style.display = isTyping ? 'none' : '';
+      });
+    };
+
+    /* ── LAST SEEN FORMATTER ── */
+    window.formatLastSeen = function(ts) {
+      if (!ts) return 'Offline';
+      const ms   = ts.seconds ? ts.seconds * 1000 : Number(ts);
+      const diff = Date.now() - ms;
+      if (diff < 60000)    return 'Last seen just now';
+      if (diff < 3600000)  return `Last seen ${Math.floor(diff / 60000)}m ago`;
+      if (diff < 86400000) return `Last seen ${Math.floor(diff / 3600000)}h ago`;
+      const d = new Date(ms);
+      return `Last seen ${d.toLocaleDateString('en-IN', { day:'numeric', month:'short' })}`;
+    };
+
   </script>
   <script>
     function getUserFromCache(uid) {
@@ -4954,53 +5001,8 @@
       `).join('');
     }
 
-    /* ── TYPING INDICATOR ── */
-    let _typingTimer = null;
-    let _typingUnsub = null;
+    /* ── LAST SEEN and TYPING are defined in the module script above ── */
 
-    window.sendTypingSignal = async function() {
-      if (!APP.activeChatId || !APP.user?.uid) return;
-      clearTimeout(_typingTimer);
-      try {
-        await updateDoc(doc(FB.db, "chats", APP.activeChatId), {
-          [`typing.${APP.user.uid}`]: true
-        });
-      } catch(e) {}
-      _typingTimer = setTimeout(async () => {
-        try {
-          await updateDoc(doc(FB.db, "chats", APP.activeChatId), {
-            [`typing.${APP.user.uid}`]: false
-          });
-        } catch(e) {}
-      }, 2000);
-    };
-
-    window.listenTyping = function(chatId, otherUserId) {
-      if (_typingUnsub) { _typingUnsub(); _typingUnsub = null; }
-      _typingUnsub = onSnapshot(doc(FB.db, "chats", chatId), (snap) => {
-        if (!snap.exists()) return;
-        const isTyping = snap.data()?.typing?.[otherUserId] === true;
-        const row    = document.getElementById('typingRow');
-        const status = document.getElementById('chatHeaderStatus');
-        if (!row || !status) return;
-        row.style.display    = isTyping ? 'flex' : 'none';
-        status.style.display = isTyping ? 'none' : '';
-      });
-    };
-
-    /* ── LAST SEEN FORMATTER ── */
-    window.formatLastSeen = function(ts) {
-      if (!ts) return 'Offline';
-      const ms   = ts.seconds ? ts.seconds * 1000 : Number(ts);
-      const diff = Date.now() - ms;
-      if (diff < 60000)    return 'Last seen just now';
-      if (diff < 3600000)  return `Last seen ${Math.floor(diff / 60000)}m ago`;
-      if (diff < 86400000) return `Last seen ${Math.floor(diff / 3600000)}h ago`;
-      const d = new Date(ms);
-      return `Last seen ${d.toLocaleDateString('en-IN', { day:'numeric', month:'short' })}`;
-    };
-
-      
     /* ─── SECTION SWITCHING ─── */
     function showSection(sec) {
       // Update sidebar nav active
@@ -5038,7 +5040,11 @@
   
     /* ─── BACK from Add/Request/Profile → contact list ─── */
     function goBackToList() {
-      history.back();
+      if (history.length > 1) {
+        history.back();
+      } else {
+        setSection('contact', false);
+      }
     }
   
     /* ─── ADD ─── */

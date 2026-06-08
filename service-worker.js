@@ -1,13 +1,15 @@
 // const CACHE_NAME = "kitcat-v6";
-const CACHE_STATIC = "kitcat-static-v8";
-const CACHE_DYNAMIC = "kitcat-dynamic-v8";
+const CACHE_STATIC = "kitcat-static-v9";
+const CACHE_DYNAMIC = "kitcat-dynamic-v9";
 
+const SCOPE_URL = new URL(self.registration.scope);
+const INDEX_URL = new URL("index.html", SCOPE_URL).href;
 const ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.json",
-  "/assets/KitCat-Logo.jpg",
-  "/assets/KitCat-bg.png"
+  SCOPE_URL.href,
+  INDEX_URL,
+  new URL("manifest.json", SCOPE_URL).href,
+  new URL("assets/KitCat-Logo.jpg", SCOPE_URL).href,
+  new URL("assets/KitCat-bg.png", SCOPE_URL).href
 ];
 
 const clientActiveChats = new Map();
@@ -48,18 +50,18 @@ self.addEventListener("fetch", (e) => {
         .then((response) => {
           const copy = response.clone();
           caches.open(CACHE_STATIC).then((cache) => {
-            cache.put("/index.html", copy);
+            cache.put(INDEX_URL, copy);
           });
           return response;
         })
         .catch(() => {
-          return caches.match("/index.html");
+          return caches.match(INDEX_URL);
         })
     );
     return;
   }
 
-  if (ASSETS.includes(url.pathname)) {
+  if (ASSETS.includes(e.request.url)) {
     e.respondWith(
       caches.match(e.request).then((cached) => {
         return cached || fetch(e.request);
@@ -114,13 +116,13 @@ self.addEventListener("push", (event) => {
 
   const options = {
     body: body,
-    icon: "/assets/KitCat-Logo.jpg",
-    badge: "/assets/KitCat-Logo.jpg",
+    icon: new URL("assets/KitCat-Logo.jpg", SCOPE_URL).href,
+    badge: new URL("assets/KitCat-Logo.jpg", SCOPE_URL).href,
     vibrate: [200, 100, 200],
     tag: chatId || "kitcat-chat",
     data: {
       chatId: chatId,
-      click_action: "/"
+      click_action: SCOPE_URL.href
     }
   };
 
@@ -167,7 +169,7 @@ self.addEventListener("notificationclick", (event) => {
         }
       }
 
-      return clients.openWindow("/?chatId=" + chatId);
+      return clients.openWindow(new URL("./?chatId=" + encodeURIComponent(chatId), SCOPE_URL).href);
     })
   );
 });

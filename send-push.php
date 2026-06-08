@@ -23,6 +23,7 @@ $title   = $input["title"]   ?? "KitCat";
 $body    = $input["body"]    ?? "New Message";
 $chatId  = $input["chatId"]  ?? "";
 $photo   = $input["photo"]   ?? "";
+$type    = $input["type"]    ?? "message";
 
 if (!$token) {
     echo json_encode([
@@ -114,7 +115,8 @@ $payload = [
             "title"  => (string)$title,
             "body"   => (string)$body,
             "chatId" => (string)$chatId,
-            "photo"  => (string)$photo
+            "photo"  => (string)$photo,
+            "type"   => (string)$type
         ],
 
         "webpush" => [

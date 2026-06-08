@@ -584,7 +584,7 @@
             <!-- App version -->
             <div class="settings-version">
               <span>🐱 KitCat</span>
-              <span>v7.0.6 · Made with ♥ by ASG</span>
+              <span>v7.0.7 · Made with ♥ by ASG</span>
             </div>
  
           </div><!-- .settings-body -->
@@ -691,7 +691,7 @@
                 </div>
               </div>
             </div>
-            <div class="settings-version"><span>🐱 KitCat</span><span>v7.0.6 · Made with ♥ by ASG</span></div>
+            <div class="settings-version"><span>🐱 KitCat</span><span>v7.0.7 · Made with ♥ by ASG</span></div>
           </div>
 
           <!-- HELP PAGE CONTENT (shown when a sub-page is opened) -->
@@ -992,6 +992,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     const storage = getStorage(app);
+    const SERVICE_WORKER_URL = new URL("service-worker.js", location.href);
 
     const rtcConfig = {
       iceServers: [
@@ -1110,6 +1111,7 @@
               localStorage.setItem('user', JSON.stringify(newUser));
 
               await ensureSelfChat(user);
+              initFCM();
           }
 
           enterApp(); // 👈 important
@@ -1200,6 +1202,7 @@
             status: APP.settings?.onlineStatus === false ? "Hidden" : "Online"
           });
           listenIncomingCalls();
+          initFCM();
           enterApp(); // 👈 auto enter
       } else {
           console.log("User logged out");
@@ -1539,23 +1542,27 @@
       // =====================================
       // 6. CALL PHP PUSH API
       // =====================================
-      fetch("send-push.php", {
+      sendPushNotification({
+        token: token,
+        title: APP.user.displayName || "KitCat",
+        body: text,
+        chatId: chatId,
+        photo: APP.user.photoURL || ""
+      });
+
+    };
+
+    window.sendPushNotification = function(payload) {
+      return fetch("send-push.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          token: token,
-          title: APP.user.displayName || "KitCat",
-          body: text,
-          chatId: chatId,
-          photo: APP.user.photoURL || ""
-        })
+        body: JSON.stringify(payload)
       })
       .then(res => res.json())
       .then(res => console.log("Push Sent:", res))
       .catch(err => console.error("Push Error:", err));
-
     };
 
     window.openChatById = function (chatId) {
@@ -1741,6 +1748,19 @@
         status: "pending",
         createdAt: serverTimestamp()
       });
+
+      const userSnap = await getDoc(doc(FB.db, "users", toUserId));
+      const userData = userSnap.exists() ? userSnap.data() : null;
+
+      if (userData?.fcmToken && userData.notificationEnabled !== false) {
+        sendPushNotification({
+          token: userData.fcmToken,
+          title: APP.user.displayName || "KitCat",
+          body: "sent you a friend request",
+          type: "friend_request",
+          photo: APP.user.photoURL || ""
+        });
+      }
 
       // update UI instantly
       sentRequests.add(toUserId);
@@ -2410,7 +2430,8 @@
     async function registerAppServiceWorker(){
       if (!("serviceWorker" in navigator)) return null;
 
-      const reg = await navigator.serviceWorker.register("/service-worker.js", {
+      const reg = await navigator.serviceWorker.register(SERVICE_WORKER_URL.href, {
+        scope: "./",
         updateViaCache: "none"
       });
 
@@ -2477,6 +2498,10 @@
 
     window.initFCM = async function() {
       try {
+        if (!APP.settings || !Object.keys(APP.settings).length) {
+          loadSettings();
+        }
+
         const permission = await Notification.requestPermission();
 
         if (permission !== "granted") {
@@ -2510,7 +2535,7 @@
 
       await setDoc(doc(FB.db, "users", uid), {
         fcmToken: token,
-        notificationEnabled: true
+        notificationEnabled: APP.settings.notifications !== false
       }, { merge: true });
 
       console.log("Token saved");
@@ -3985,6 +4010,13 @@
     function updateSetting(key, value) {
       APP.settings[key] = value;
       saveSettings();
+
+      if (key === "notifications" && APP.user?.uid) {
+        updateDoc(doc(FB.db, "users", APP.user.uid), {
+          notificationEnabled: value !== false
+        }).catch(err => console.error("Notification setting sync failed:", err));
+      }
+
       applySettings(); // auto apply
       showToast("Setting updated");
     }
